@@ -17,3 +17,6 @@
 [submodule "third_party/sparc"]
 	path = third_party/sparc
 	url = https://github.com/taoyds/sparc.git
+[submodule "third_party/squall"]
+	path = third_party/squall
+	url = https://github.com/tzshi/squall.git
