@@ -47,6 +47,7 @@ def main() -> None:
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
+    training_args.report_to=[] #debug
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
         import wandb
 
@@ -86,7 +87,7 @@ def main() -> None:
         cache_root = os.path.join('output', 'cache')
         os.makedirs(cache_root, exist_ok=True)
         raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
-                                                                         cache_dir=args.dataset.data_store_path)
+                                                                        cache_dir=args.dataset.data_store_path)
         seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
             raw_datasets_split, cache_root)
     else:
@@ -100,6 +101,7 @@ def main() -> None:
             task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
                 path=task_args.dataset.loader_path,
                 cache_dir=task_args.dataset.data_store_path)
+            print(task_raw_datasets_split)
             task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
                 to_seq2seq(task_raw_datasets_split, cache_root)
 
@@ -119,6 +121,8 @@ def main() -> None:
         seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = seq2seq_dataset_split
     else:
         raise ValueError("Other split not support yet.")
+    print(seq2seq_train_dataset)
+    assert 1==2
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,

@@ -1,0 +1,4 @@
+FATAL:   while loading overlay images: failed to open overlay image ../overlay-share.ext3: while locking ext3 partition from /scratch/sz4651/Projects/overlay-share.ext3: can't open /scratch/sz4651/Projects/overlay-share.ext3 for reading, currently in use for writing by another process
+FATAL:   while loading overlay images: failed to open overlay image /scratch/sz4651/Projects/overlay-share.ext3: while locking ext3 partition from /scratch/sz4651/Projects/overlay-share.ext3: can't open /scratch/sz4651/Projects/overlay-share.ext3 for reading, currently in use for writing by another process
+/bin/bash: line 1: conda: command not found
+/usr/bin/python: No module named torch.distributed

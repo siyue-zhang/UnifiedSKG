@@ -20,3 +20,4 @@
 [submodule "third_party/squall"]
 	path = third_party/squall
 	url = https://github.com/tzshi/squall.git
+	branch = main
