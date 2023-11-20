@@ -272,6 +272,7 @@ class Squall(datasets.GeneratorBasedBuilder):
                 query = ' '.join(sqls['value'])
                 
             raw_header = cols['raw_header']
+            raw_header = ['unknown' if element == '' else element for element in raw_header]
             raw_header = [raw_header[i]+f'_{i}' for i in range(len(raw_header))]
             column_suffixes = cols['column_suffixes']
             column_names = []
