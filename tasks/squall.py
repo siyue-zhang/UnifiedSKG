@@ -23,6 +23,7 @@ import os
 import datasets
 from datasets.tasks import QuestionAnsweringExtractive
 import pandas as pd
+from copy import deepcopy
 
 logger = datasets.logging.get_logger(__name__)
 
@@ -64,15 +65,32 @@ class Squall(datasets.GeneratorBasedBuilder):
             features=datasets.Features(
                 {
                     "query": datasets.Value("string"),
-                    "question_id": datasets.Value("string"),
+                    "query_tokens": datasets.features.Sequence(datasets.Value("string")),
+                    "converted_query": datasets.Value("string"),
+                    "nt": datasets.Value("string"),
                     "question": datasets.Value("string"),
-                    "table_id": datasets.Value("string"),
+                    "db_id": datasets.Value("string"),
                     "db_path": datasets.Value("string"),
                     "json_path": datasets.Value("string"),
-                    "header_names": datasets.features.Sequence(datasets.Value("string")),
-                    "column_names": datasets.features.Sequence(datasets.Value("string")),
-                    "ori_column_names": datasets.features.Sequence(datasets.Value("string")),
-                    "answer_text": datasets.Value("string")
+                    "header": datasets.features.Sequence(datasets.Value("string")),
+                    "label": datasets.Value("string"),
+
+                    "db_table_names": datasets.features.Sequence(datasets.Value("string")),
+                    "db_column_names": datasets.features.Sequence(
+                        {
+                            "table_id": datasets.Value("int32"),
+                            "column_name": datasets.Value("string"),
+                            'ori_column_name': datasets.Value("string"),
+                        }
+                    ),
+                    "db_column_types": datasets.features.Sequence(datasets.Value("string")),
+                    "db_primary_keys": datasets.features.Sequence({"column_id": datasets.Value("int32")}),
+                    "db_foreign_keys": datasets.features.Sequence(
+                        {
+                            "column_id": datasets.Value("int32"),
+                            "other_column_id": datasets.Value("int32"),
+                        }
+                    ),
                 }
             ),
             supervised_keys=None,
@@ -223,6 +241,7 @@ class Squall(datasets.GeneratorBasedBuilder):
         for idx, sample in enumerate(squall):
             # transform columns
             cols = transform(sample, "columns", columns_keys)
+            query_tokens = []
             if split_key == 'test':
                 query = ''
                 tgt = test_label[test_label["id"]==sample["nt"]]["targetValue"].tolist()[0]
@@ -236,29 +255,56 @@ class Squall(datasets.GeneratorBasedBuilder):
                 sqls = transform(sample, "sql", sql_keys)
                 query = ' '.join(sqls['value'])
                 tgt = sample['tgt']
+                query_tokens = sqls['value']
                 
             raw_header = cols['raw_header']
             raw_header = ['unknown' if element == '' else element for element in raw_header]
             raw_header = [raw_header[i]+f'_{i+1}' for i in range(len(raw_header))]
             column_suffixes = cols['column_suffixes']
-            column_names = []
-            ori_column_names = []
+
+            db_column_names = {'table_id':[-1], 'column_name': ['*'], 'ori_column_name': ['*']}
+            db_column_types = []
+
             for j, h in enumerate(column_suffixes):
-                column_names.append(raw_header[j])
-                ori_column_names.append(f'c{j+1}')
+                db_column_names['table_id'].append(0)
+                db_column_names['column_name'].append(raw_header[j])
+                db_column_names['ori_column_name'].append(f'c{j+1}')
+
+                col_type = cols["column_dtype"][j]
+                if 'number' in col_type:
+                        col_type = 'number'
+                else:
+                    col_type = 'text'
+
                 for suf in h:
-                    column_names.append(raw_header[j]+'_'+suf)
-                    ori_column_names.append(f'c{j+1}_{suf}')
+                    db_column_names['column_name'].append(raw_header[j]+'_'+suf)
+                    db_column_names['ori_column_name'].append(f'c{j+1}_{suf}')
+                    db_column_types.append(col_type)
             
+            db_primary_keys = {'column_id': []}
+            db_foreign_keys = {'column_id': [], 'other_column_id': []}
+
+            converted_query = deepcopy(query)
+            if split_key != 'test':
+                for k, ori_col in enumerate(db_column_names['ori_column_name']):
+                    converted_query = converted_query.replace(ori_col, db_column_names['column_name'][k])
+
             yield idx, {
                 "query": query,
-                "question_id": sample["nt"],
+                "query_tokens": query_tokens,
+                "converted_query": converted_query,
+                "nt": sample["nt"],
+                "header": raw_header,
                 "question": ' '.join(sample["nl"]),
-                "table_id": sample["tbl"],
+                "label": tgt,
+                "db_id": sample["tbl"],
                 "db_path": f"./third_party/squall/tables/db/{sample['tbl']}.db",
                 "json_path": f"./third_party/squall/tables/json/{sample['tbl']}.json",
-                "header_names": raw_header,
-                "column_names": column_names,
-                "ori_column_names": ori_column_names,
-                "answer_text": tgt,
+                "db_table_names": ['w'],
+                "db_column_names": db_column_names,
+                "db_column_types": db_column_types,
+                "db_primary_keys": db_primary_keys,
+                "db_foreign_keys": db_foreign_keys,
             }
+
+    
