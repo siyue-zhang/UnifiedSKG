@@ -139,3 +139,6 @@ data/
 wandb/
 monitor/
 *.slurm
+output/
+third_party/
+overlay-skg.ext3

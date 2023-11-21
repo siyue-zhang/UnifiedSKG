@@ -121,8 +121,6 @@ def main() -> None:
         seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = seq2seq_dataset_split
     else:
         raise ValueError("Other split not support yet.")
-    print(seq2seq_train_dataset)
-    # assert 1==2
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,

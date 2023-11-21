@@ -18,10 +18,11 @@
 
 
 import json
-import re, os
+import re
+import os
 import datasets
 from datasets.tasks import QuestionAnsweringExtractive
-
+import pandas as pd
 
 logger = datasets.logging.get_logger(__name__)
 
@@ -51,77 +52,32 @@ _URLS = {
     "dev-2": _URL +  "dev-2.ids",
     "dev-3": _URL +  "dev-3.ids",
     "dev-4": _URL +  "dev-4.ids",
+    "test_label": "https://raw.githubusercontent.com/ppasupat/WikiTableQuestions/master/data/pristine-unseen-tables.tsv"
 }
-
-# class SquallConfig(datasets.BuilderConfig):
-#     """BuilderConfig for Squall."""
-
-#     def __init__(self, **kwargs):
-#         """BuilderConfig for Squall.
-#         Args:
-#           **kwargs: keyword arguments forwarded to super.
-#         """
-#         super(SquallConfig, self).__init__(**kwargs)
-
 
 class Squall(datasets.GeneratorBasedBuilder):
     """SQUALL: Lexical-level Supervised Table Question Answering Dataset."""
 
-    # BUILDER_CONFIGS = [
-    #     SquallConfig(name = '0'),
-    #     SquallConfig(name = '1'),
-    #     SquallConfig(name = '2'),
-    #     SquallConfig(name = '3'),
-    #     SquallConfig(name = '4')
-    # ]
-    
     def _info(self):
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
             features=datasets.Features(
                 {
-                    "nt": datasets.Value("string"),
-                    "tbl": datasets.Value("string"),
-                    "columns":
-                        {
-                            "raw_header": datasets.features.Sequence(datasets.Value("string")),
-                            "tokenized_header": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("string"))),
-                            "column_suffixes": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("string"))),
-                            "column_dtype": datasets.features.Sequence(datasets.Value("string")),
-                            "example": datasets.features.Sequence(datasets.Value("string"))
-                        },
-                    "nl": datasets.features.Sequence(datasets.Value("string")),
-                    "nl_pos": datasets.features.Sequence(datasets.Value("string")),
-                    "nl_ner": datasets.features.Sequence(datasets.Value("string")),
-                    "nl_incolumns": datasets.features.Sequence(datasets.Value("bool_")),
-                    "nl_incells": datasets.features.Sequence(datasets.Value("bool_")),
-                    "columns_innl": datasets.features.Sequence(datasets.Value("bool_")),
-                    "tgt": datasets.Value("string"),
-                    "sql": {
-                        "sql_type": datasets.features.Sequence(datasets.Value("string")), 
-                        "value": datasets.features.Sequence(datasets.Value("string")), 
-                        "span_indices": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("int32")))
-                    },
-                    "nl_ralign": {
-                        "aligned_sql_token_type":datasets.features.Sequence(datasets.Value("string")),
-                        "aligned_sql_token_info":datasets.features.Sequence(datasets.Value("string")),
-                    },
-                    "align":{
-                        "nl_indices": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("int32"))),
-                        "sql_indices": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("int32")))
-                    }
+                    "query": datasets.Value("string"),
+                    "question_id": datasets.Value("string"),
+                    "question": datasets.Value("string"),
+                    "table_id": datasets.Value("string"),
+                    "db_path": datasets.Value("string"),
+                    "json_path": datasets.Value("string"),
+                    "header_names": datasets.features.Sequence(datasets.Value("string")),
+                    "column_names": datasets.features.Sequence(datasets.Value("string")),
+                    "ori_column_names": datasets.features.Sequence(datasets.Value("string")),
+                    "answer_text": datasets.Value("string")
                 }
             ),
-            # No default supervised_keys (as we have to pass both question
-            # and context as input).
             supervised_keys=None,
             homepage="https://github.com/tzshi/squall/",
             citation=_CITATION,
-            task_templates=[
-                QuestionAnsweringExtractive(
-                    question_column="nl", context_column="columns", answers_column="tgt"
-                )
-            ],
         )
 
     def _split_generators(self, dl_manager):
@@ -133,6 +89,7 @@ class Squall(datasets.GeneratorBasedBuilder):
             "dev-2": _URLS["dev-2"],
             "dev-3": _URLS["dev-3"],
             "dev-4": _URLS["dev-4"],
+            "test_label": _URLS["test_label"]
         }
 
         downloaded_files = dl_manager.download_and_extract(urls_to_download)
@@ -156,6 +113,7 @@ class Squall(datasets.GeneratorBasedBuilder):
         squall_full = filepath["squall"]
         dev_ids = filepath["dev-1"]
         test = filepath["wtq-test"]
+        test_label = filepath["test_label"]
 
         # transform the original squall data structure (list of things) to dict 
         def transform(sample, sample_key, keys):
@@ -254,44 +212,53 @@ class Squall(datasets.GeneratorBasedBuilder):
             with open(dev_ids) as f:
                 dev_ids = json.load(f)
             if split_key == "train":
-                set = [x for x in squall_full_data if x["tbl"] not in dev_ids]
+                squall = [x for x in squall_full_data if x["tbl"] not in dev_ids]
             else:
-                set = [x for x in squall_full_data if x["tbl"] in dev_ids]
+                squall = [x for x in squall_full_data if x["tbl"] in dev_ids]
         else:
             with open(test, encoding="utf-8") as f:
-                set = json.load(f)
+                squall = json.load(f)
+            test_label = pd.read_table(test_label)
 
-        for idx, sample in enumerate(set):
+        for idx, sample in enumerate(squall):
             # transform columns
             cols = transform(sample, "columns", columns_keys)
             if split_key == 'test':
                 query = ''
+                tgt = test_label[test_label["id"]==sample["nt"]]["targetValue"].tolist()[0]
+                if isinstance(tgt, list):
+                    tgt = [str(x) for x in tgt]
+                    tgt = '|'.join(tgt)
+                else:
+                    tgt = str(tgt)
             else:
                 # transform sql
                 sqls = transform(sample, "sql", sql_keys)
                 query = ' '.join(sqls['value'])
+                tgt = sample['tgt']
                 
             raw_header = cols['raw_header']
             raw_header = ['unknown' if element == '' else element for element in raw_header]
-            raw_header = [raw_header[i]+f'_{i}' for i in range(len(raw_header))]
+            raw_header = [raw_header[i]+f'_{i+1}' for i in range(len(raw_header))]
             column_suffixes = cols['column_suffixes']
             column_names = []
             ori_column_names = []
-            for idx, h in enumerate(column_suffixes):
-                column_names.append(raw_header[idx])
-                ori_column_names.append(f'c{idx+1}')
+            for j, h in enumerate(column_suffixes):
+                column_names.append(raw_header[j])
+                ori_column_names.append(f'c{j+1}')
                 for suf in h:
-                    column_names.append(raw_header[idx]+'_'+suf)
-                    ori_column_names.append(f'c{idx+1}_{suf}')
+                    column_names.append(raw_header[j]+'_'+suf)
+                    ori_column_names.append(f'c{j+1}_{suf}')
             
             yield idx, {
                 "query": query,
                 "question_id": sample["nt"],
                 "question": ' '.join(sample["nl"]),
                 "table_id": sample["tbl"],
-                "db_path": f"/scratch/sz4651/Projects/UnifiedSKG/third_party/squall/tables/db/{sample['tbl']}.db",
+                "db_path": f"./third_party/squall/tables/db/{sample['tbl']}.db",
+                "json_path": f"./third_party/squall/tables/json/{sample['tbl']}.json",
                 "header_names": raw_header,
                 "column_names": column_names,
                 "ori_column_names": ori_column_names,
-                "answer_text": sample["tgt"],
+                "answer_text": tgt,
             }
