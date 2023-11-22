@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     os.environ[
         'CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # Deterministic behavior of torch.addmm. Please refer to https://docs.nvidia.com/cuda/cublas/index.html#cublasApi_reproducibility
-    torch.set_deterministic(True)
+    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+    # torch.set_deterministic(True)
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)
 
@@ -121,6 +122,14 @@ def main() -> None:
         seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = seq2seq_dataset_split
     else:
         raise ValueError("Other split not support yet.")
+    
+    if args.dataset.max_train_samples is not None:
+        max_train_samples = min(len(train_dataset), args.dataset.max_train_samples)
+        seq2seq_train_dataset = seq2seq_train_dataset.select(range(max_train_samples))
+
+    if args.dataset.max_eval_samples is not None:
+        max_eval_samples = min(len(eval_dataset), args.dataset.max_eval_samples)
+        seq2seq_eval_dataset = seq2seq_eval_dataset.select(range(max_eval_samples))
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,
