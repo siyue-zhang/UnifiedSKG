@@ -22,10 +22,18 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import regex as re
 
-from transformers.file_utils import ExplicitEnum, PaddingStrategy, TensorType, add_end_docstrings, is_pandas_available
+from transformers.file_utils import ExplicitEnum, PaddingStrategy, TensorType, is_pandas_available
 from transformers.tokenization_utils import AddedToken, PreTrainedTokenizer
 from transformers.tokenization_utils_base import ENCODE_KWARGS_DOCSTRING, BatchEncoding, TextInput, TruncationStrategy
 from transformers.utils import logging
+
+
+def add_end_docstrings(*docstr):
+    def docstring_decorator(fn):
+        fn.__doc__ = (fn.__doc__ if fn.__doc__ is not None else "") + "".join(docstr)
+        return fn
+
+    return docstring_decorator
 
 
 if is_pandas_available():
@@ -301,6 +309,8 @@ class TapexTokenizer(PreTrainedTokenizer):
         self.decoder = {v: k for k, v in self.encoder.items()}
         self.errors = errors  # how to handle errors in decoding
         self.byte_encoder = bytes_to_unicode()
+        print('AAA')
+        print(self.byte_encoder.items())
         self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
         with open(merges_file, encoding="utf-8") as merges_handle:
             bpe_merges = merges_handle.read().split("\n")[1:-1]
@@ -480,6 +490,11 @@ class TapexTokenizer(PreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens):
         """Converts a sequence of tokens (string) in a single string."""
         text = "".join(tokens)
+        print(text)
+        for c in text:
+            print(c)
+            if c == ' ':
+                assert 1==2
         text = bytearray([self.byte_decoder[c] for c in text]).decode("utf-8", errors=self.errors)
         return text
 
