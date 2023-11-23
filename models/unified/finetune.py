@@ -4,7 +4,7 @@
 from torch import nn
 from .base import PushToHubFriendlyModel
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
+from utils.tokenization_tapex import TapexTokenizer
 
 class Model(PushToHubFriendlyModel):
     def __init__(self, args):
@@ -12,7 +12,10 @@ class Model(PushToHubFriendlyModel):
         self.args = args
 
         # Load tokenizer and model.
-        self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+        if args.model.knowledge_usage == 'tapex':
+            self.tokenizer = TapexTokenizer.from_pretrained(args.bert.location)
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert.location,
         )

@@ -1,7 +1,7 @@
 import os
 import torch
 from torch.utils.data import Dataset
-
+import pandas as pd
 
 class TokenizedDataset(Dataset):
     # TODO: A unified structure-representation.
@@ -45,7 +45,7 @@ class TokenizedDataset(Dataset):
                 if self.args.model.knowledge_usage == 'concatenate' or self.args.model.knowledge_usage is None:
                     # seq_in  = "text_in ; structured knowledge: struct_in"
                     seq_in = "{} ; structured knowledge: {}".format(raw_item["text_in"], raw_item["struct_in"])
-                elif self.args.model.knowledge_usage == 'separate':
+                elif self.args.model.knowledge_usage in ['separate', 'tapex']:
                     # seq_in  = "text_in"
                     seq_in = raw_item["text_in"]
                 else:
@@ -57,7 +57,7 @@ class TokenizedDataset(Dataset):
             if self.args.model.knowledge_usage == 'concatenate':
                 # seq_in  = "structured knowledge: struct_in"
                 seq_in = "structured knowledge: {}".format(raw_item["struct_in"])
-            elif self.args.model.knowledge_usage == 'separate':
+            elif self.args.model.knowledge_usage in ['separate', 'tapex']:
                 # seq_in  = ""
                 seq_in = ""
             else:
@@ -67,23 +67,38 @@ class TokenizedDataset(Dataset):
         if self.args.model.use_description and self.args.model.concatenate_description:
             seq_in = "{} ; {}".format(raw_item["description"], seq_in)
 
-        tokenized_question_and_schemas = self.tokenizer(
-            seq_in,
-            padding="max_length",
-            truncation=True,
-            max_length=self.training_args.input_max_length,
-            # We found that set it as large as possible can boost the performance significantly
-            # , meanwhile, due to the t5 uses a relative position coding, we need to manually
-            # assign the max input length into some large numbers, instead of using the "max_model_length"
-            # ,which the default is 512, which will hurt the performance a lot.
-        )
-        tokenized_inferred = self.tokenizer(
-            raw_item["seq_out"],
-            padding="max_length",
-            truncation=True,
-            max_length=self.training_args.generation_max_length,
-            # We set the max_length of "seq_out" during training is the same with the one in inference.
-        )
+        if self.args.model.knowledge_usage == 'tapex':
+            table = pd.DataFrame(raw_item["table_context"]['rows'], columns=raw_item["table_context"]['header'])
+            tokenized_question_and_schemas = self.tokenizer(
+                table=table, query=seq_in, max_length=self.training_args.input_max_length, padding="max_length", truncation=True
+            )
+
+            tokenized_inferred = self.tokenizer(
+                answer=raw_item["seq_out"],
+                padding="max_length",
+                truncation=True,
+                max_length=self.training_args.generation_max_length,
+                # We set the max_length of "seq_out" during training is the same with the one in inference.
+            )
+        else:
+            tokenized_question_and_schemas = self.tokenizer(
+                seq_in,
+                padding="max_length",
+                truncation=True,
+                max_length=self.training_args.input_max_length,
+                # We found that set it as large as possible can boost the performance significantly
+                # , meanwhile, due to the t5 uses a relative position coding, we need to manually
+                # assign the max input length into some large numbers, instead of using the "max_model_length"
+                # ,which the default is 512, which will hurt the performance a lot.
+            )
+
+            tokenized_inferred = self.tokenizer(
+                raw_item["seq_out"],
+                padding="max_length",
+                truncation=True,
+                max_length=self.training_args.generation_max_length,
+                # We set the max_length of "seq_out" during training is the same with the one in inference.
+            )
 
         tokenized_inferred_input_ids = torch.LongTensor(tokenized_inferred.data["input_ids"])
         # Here -100 will let the model not to compute the loss of the padding tokens.

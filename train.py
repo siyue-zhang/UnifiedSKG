@@ -98,6 +98,7 @@ def main() -> None:
         for task, arg_path in args.arg_paths:
             task_args = Configure.Get(arg_path)
             task_args.bert = args.bert
+            task_args.model = args.model
             print('task_args.bert.location:', task_args.bert.location)
             task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
                 path=task_args.dataset.loader_path,
@@ -122,14 +123,6 @@ def main() -> None:
         seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = seq2seq_dataset_split
     else:
         raise ValueError("Other split not support yet.")
-    
-    if args.dataset.max_train_samples is not None:
-        max_train_samples = min(len(train_dataset), args.dataset.max_train_samples)
-        seq2seq_train_dataset = seq2seq_train_dataset.select(range(max_train_samples))
-
-    if args.dataset.max_eval_samples is not None:
-        max_eval_samples = min(len(eval_dataset), args.dataset.max_eval_samples)
-        seq2seq_eval_dataset = seq2seq_eval_dataset.select(range(max_eval_samples))
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,

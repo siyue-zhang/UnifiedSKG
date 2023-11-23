@@ -10,7 +10,6 @@ from transformers import AutoTokenizer
 from tqdm import tqdm
 from utils.processor import get_default_processor
 
-
 class Constructor(object):
     def __init__(self, args):
         self.args = args
@@ -48,8 +47,12 @@ class TrainDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
+            if args.model.knowledge_usage == 'tapex':
+                tokenizer = AutoTokenizer.from_pretrained('facebook/bart-large')
+            else:
+                tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
-                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       tokenizer=tokenizer,
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 
             self.extended_data = []
@@ -88,7 +91,8 @@ class TrainDataset(Dataset):
 
                     extend_data.update({"struct_in": linear_table.lower(),
                                         "text_in": question.lower(),
-                                        "seq_out": seq_out.lower()})
+                                        "seq_out": seq_out.lower(),
+                                        "table_context": table_context})
                     self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -110,8 +114,12 @@ class DevDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
+            if args.model.knowledge_usage == 'tapex':
+                tokenizer = AutoTokenizer.from_pretrained('facebook/bart-large')
+            else:
+                tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
-                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       tokenizer=tokenizer,
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 
             self.extended_data = []
@@ -124,14 +132,15 @@ class DevDataset(Dataset):
                 table_context = copy.deepcopy(table)
                 # modify a table internally
                 for truncate_func in self.tab_processor.table_truncate_funcs:
-                    truncate_func.truncate_table(table_context, question, [])
+                    truncate_func.truncate_table(table_context, question, gold_result)
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
                 seq_out = self.tab_processor.process_output(gold_result)
 
                 extend_data.update({"struct_in": linear_table.lower(),
                                     "text_in": question.lower(),
-                                    "seq_out": seq_out.lower()})
+                                    "seq_out": seq_out.lower(),
+                                    "table_context": table_context})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -153,8 +162,13 @@ class TestDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
+            if args.model.knowledge_usage == 'tapex':
+                location = 'facebook/bart-large'
+            else:
+                location = args.bert.location
+            tokenizer = AutoTokenizer.from_pretrained(location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
-                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       tokenizer=tokenizer,
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
             
             self.extended_data = []
@@ -167,14 +181,15 @@ class TestDataset(Dataset):
                 table_context = copy.deepcopy(table)
                 # modify a table internally
                 for truncate_func in self.tab_processor.table_truncate_funcs:
-                    truncate_func.truncate_table(table_context, question, [])
+                    truncate_func.truncate_table(table_context, question, gold_result)
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
                 seq_out = self.tab_processor.process_output(gold_result)
 
                 extend_data.update({"struct_in": linear_table.lower(),
                                     "text_in": question.lower(),
-                                    "seq_out": seq_out.lower()})
+                                    "seq_out": seq_out.lower(),
+                                    "table_context": table_context})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
