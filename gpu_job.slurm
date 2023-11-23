@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=t5_large_spider
+#SBATCH --job-name=Omnitab
 #SBATCH --open-mode=append
-#SBATCH --output=./monitor/t5_large_spider_with_cell_value.out
-#SBATCH --error=./monitor/t5_large_spider_with_cell_value.err
+#SBATCH --output=./monitor/Omnitab_large_finetune_wikitq.out
+#SBATCH --error=./monitor/Omnitab_large_finetune_wikitq.err
 #SBATCH --export=ALL
 #SBATCH --time=10:00:00
 #SBATCH --gres=gpu:2
@@ -15,8 +15,8 @@ cd /scratch/sz4651/Projects/UnifiedSKG \
 && source activate /scratch/sz4651/miniconda3/envs/py3.7pytorch1.8new \
 && python -m torch.distributed.launch --nproc_per_node 2 \
 --master_port 1234 train.py --seed 2 \
---cfg Salesforce/T5_large_finetune_spider_with_cell_value.cfg \
---run_name T5_large_finetune_spider_with_cell_value \
+--cfg Salesforce/_Omnitab_large_finetune_wikitq.cfg \
+--run_name Omnitab_large_finetune_wikitq \
 --logging_strategy steps \
 --logging_first_step true \
 --logging_steps 4 \
@@ -32,7 +32,7 @@ cd /scratch/sz4651/Projects/UnifiedSKG \
 --num_train_epochs 400 \
 --adafactor true --learning_rate 5e-5 \
 --do_train --do_eval --do_predict --predict_with_generate \
---output_dir output/T5_large_finetune_spider_with_cell_value \
+--output_dir output/Omnitab_large_finetune_wikitq \
 --overwrite_output_dir \
 --per_device_train_batch_size 2 \
 --per_device_eval_batch_size 8 \

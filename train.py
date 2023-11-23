@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     os.environ[
         'CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # Deterministic behavior of torch.addmm. Please refer to https://docs.nvidia.com/cuda/cublas/index.html#cublasApi_reproducibility
-    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '3'
     # torch.set_deterministic(True)
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)
@@ -48,7 +48,7 @@ def main() -> None:
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
-    training_args.report_to=[] #debug
+    # training_args.report_to=[] #debug
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
         import wandb
 
