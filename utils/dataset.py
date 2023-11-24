@@ -68,9 +68,8 @@ class TokenizedDataset(Dataset):
             seq_in = "{} ; {}".format(raw_item["description"], seq_in)
 
         if self.args.model.knowledge_usage == 'tapex':
-            table = pd.DataFrame(raw_item["table_context"]['rows'], columns=raw_item["table_context"]['header'])
             tokenized_question_and_schemas = self.tokenizer(
-                table=table, query=seq_in, max_length=self.training_args.input_max_length, padding="max_length", truncation=True
+                table=raw_item["df"], query=seq_in, max_length=self.training_args.input_max_length, padding="max_length", truncation=True
             )
 
             tokenized_inferred = self.tokenizer(

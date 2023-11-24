@@ -9,6 +9,7 @@ from torch.utils.data.dataset import T_co
 from transformers import AutoTokenizer
 from tqdm import tqdm
 from utils.processor import get_default_processor
+import pandas as pd
 
 class Constructor(object):
     def __init__(self, args):
@@ -62,23 +63,7 @@ class TrainDataset(Dataset):
                     extend_data = deepcopy(raw_data)
                     question = extend_data["question"]
                     table = extend_data['table']
-                    # table = {'header': ['Year', 'Division', 'League', 'Regular Season', 
-                    # 'Playoffs', 'Open Cup', 'Avg. Attendance'], 'rows': [['2001', 
-                    # '2', 'USL A-League', '4th, Western', 'Quarterfinals', 
-                    # 'Did not qualify', '7,169'], ['2002', '2', 'USL A-League', 
-                    # '2nd, Pacific', '1st Round', 'Did not qualify', '6,260'], 
-                    # ['2003', '2', 'USL A-League', '3rd, Pacific', 'Did not qualify', 
-                    # 'Did not qualify', '5,871'], ['2004', '2', 'USL A-League', 
-                    # '1st, Western', 'Quarterfinals', '4th Round', '5,628'], 
-                    # ['2005', '2', 'USL First Division', '5th', 'Quarterfinals',
-                    #  '4th Round', '6,028'], ['2006', '2', 'USL First Division', 
-                    # '11th', 'Did not qualify', '3rd Round', '5,575'], 
-                    # ['2007', '2', 'USL First Division', '2nd', 'Semifinals',
-                    #  '2nd Round', '6,851'], ['2008', '2', 'USL First Division',
-                    #  '11th', 'Did not qualify', '1st Round', '8,567'], ['2009', 
-                    # '2', 'USL First Division', '1st', 'Semifinals', '3rd Round',
-                    #  '9,734'], ['2010', '2', 'USSF D-2 Pro League', '3rd, USL (3rd)',
-                    #  'Quarterfinals', '3rd Round', '10,727']]}
+                    # table = {'header': [,], 'rows': [[,],[,],...]}
                     gold_result = extend_data['answer_text']
 
                     table_context = copy.deepcopy(table)
@@ -89,10 +74,11 @@ class TrainDataset(Dataset):
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
                     seq_out = self.tab_processor.process_output(gold_result)
 
-                    extend_data.update({"struct_in": linear_table.lower(),
-                                        "text_in": question.lower(),
-                                        "seq_out": seq_out.lower(),
-                                        "table_context": table_context})
+                    update_dict = {"struct_in": linear_table.lower(),
+                                    "text_in": question.lower(),
+                                    "seq_out": seq_out.lower(),
+                                    'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                    extend_data.update(update_dict)
                     self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -137,10 +123,11 @@ class DevDataset(Dataset):
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
                 seq_out = self.tab_processor.process_output(gold_result)
 
-                extend_data.update({"struct_in": linear_table.lower(),
-                                    "text_in": question.lower(),
-                                    "seq_out": seq_out.lower(),
-                                    "table_context": table_context})
+                update_dict = {"struct_in": linear_table.lower(),
+                                "text_in": question.lower(),
+                                "seq_out": seq_out.lower(),
+                                'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                extend_data.update(update_dict)
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -163,10 +150,9 @@ class TestDataset(Dataset):
             self.extended_data = torch.load(cache_path)
         else:
             if args.model.knowledge_usage == 'tapex':
-                location = 'facebook/bart-large'
+                tokenizer = AutoTokenizer.from_pretrained('facebook/bart-large')
             else:
-                location = args.bert.location
-            tokenizer = AutoTokenizer.from_pretrained(location, use_fast=False)
+                tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
                                                        tokenizer=tokenizer,
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
@@ -186,10 +172,11 @@ class TestDataset(Dataset):
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
                 seq_out = self.tab_processor.process_output(gold_result)
 
-                extend_data.update({"struct_in": linear_table.lower(),
-                                    "text_in": question.lower(),
-                                    "seq_out": seq_out.lower(),
-                                    "table_context": table_context})
+                update_dict = {"struct_in": linear_table.lower(),
+                                "text_in": question.lower(),
+                                "seq_out": seq_out.lower(),
+                                'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                extend_data.update(update_dict)
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
