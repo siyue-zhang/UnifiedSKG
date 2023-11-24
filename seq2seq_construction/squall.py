@@ -219,6 +219,7 @@ class TrainDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         self.args = args
         self.raw_datasets = raw_datasets
+        self.table_contents = {}
 
         cache_path = os.path.join(cache_root, 'squall_train.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
@@ -230,9 +231,48 @@ class TrainDataset(Dataset):
                 extend_data.update(squall_add_serialized_schema(extend_data, args))
 
                 question, seq_out = squall_pre_process_one_function(extend_data, args)
+                print('question: ')
+                print(question)
+                print('seq_out: ', seq_out)
+
+                nt = extend_data['nt']
+                json_path = extend_data['json_path']
+                table_id = extend_data['db_id']
+                with open(json_path, "r") as f:
+                    contents = json.load(f)
+                print(contents)
+                contents = contents['content']
+                context_table = {'header': contents['headers']}
+                cols = []
+                for c in contents['contents']:
+                    for cc in c:
+                        cols.append(cc['data'])
+                rows = []
+                for n in range(max([len(c) for c in cols])):
+                    row = []
+                    for m in range(len(cols)):
+                        if n<len(cols[m]):
+                            row.append(cols[m][n])
+                        else:
+                            row.append(None)
+
+                    
+                # table = {'header': [,], 'rows': [[,],[,],...]}
+                # table_dict = {'header': df.columns.tolist(), 'rows': df.values.tolist()}
+
+                if db_id not in self.db_contents:
+                    database_dict = read_sqlite_database(db_path)
+                    self.db_contents['db_id'] = database_dict
+                else:
+                    database_dict = self.db_contents['db_id']
+
+                print(raw_data)
+                assert 1==2
+                table_context = None
                 extend_data.update({"struct_in": extend_data["serialized_schema"].strip(),
                                     "text_in": question,
-                                    "seq_out": seq_out})
+                                    "seq_out": seq_out,
+                                    "table_context": table_context})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)

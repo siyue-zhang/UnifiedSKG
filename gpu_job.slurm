@@ -21,7 +21,7 @@ cd /scratch/sz4651/Projects/UnifiedSKG \
 --logging_first_step true \
 --logging_steps 4 \
 --evaluation_strategy steps \
---eval_steps 100 \
+--eval_steps 50 \
 --metric_for_best_model avr \
 --greater_is_better true \
 --save_strategy steps \

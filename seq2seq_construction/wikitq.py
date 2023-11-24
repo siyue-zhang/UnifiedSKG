@@ -54,7 +54,8 @@ class TrainDataset(Dataset):
                 tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
                                                        tokenizer=tokenizer,
-                                                       max_input_length=args.seq2seq.table_truncation_max_length)
+                                                       max_input_length=args.seq2seq.table_truncation_max_length,
+                                                       target_delimiter='|')
 
             self.extended_data = []
             expansion = args.seq2seq.expansion if args.seq2seq.expansion else 1
@@ -77,7 +78,7 @@ class TrainDataset(Dataset):
                     update_dict = {"struct_in": linear_table.lower(),
                                     "text_in": question.lower(),
                                     "seq_out": seq_out.lower(),
-                                    'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                                    "table_context": table_context}
                     extend_data.update(update_dict)
                     self.extended_data.append(extend_data)
             if args.dataset.use_cache:
@@ -106,7 +107,8 @@ class DevDataset(Dataset):
                 tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
                                                        tokenizer=tokenizer,
-                                                       max_input_length=args.seq2seq.table_truncation_max_length)
+                                                       max_input_length=args.seq2seq.table_truncation_max_length,
+                                                       target_delimiter='|')
 
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
@@ -126,7 +128,7 @@ class DevDataset(Dataset):
                 update_dict = {"struct_in": linear_table.lower(),
                                 "text_in": question.lower(),
                                 "seq_out": seq_out.lower(),
-                                'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                                "table_context": table_context}
                 extend_data.update(update_dict)
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
@@ -155,7 +157,8 @@ class TestDataset(Dataset):
                 tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
             self.tab_processor = get_default_processor(max_cell_length=15,
                                                        tokenizer=tokenizer,
-                                                       max_input_length=args.seq2seq.table_truncation_max_length)
+                                                       max_input_length=args.seq2seq.table_truncation_max_length,
+                                                       target_delimiter='|')
             
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
@@ -175,7 +178,7 @@ class TestDataset(Dataset):
                 update_dict = {"struct_in": linear_table.lower(),
                                 "text_in": question.lower(),
                                 "seq_out": seq_out.lower(),
-                                'df': pd.DataFrame(table_context['rows'], columns=table_context['header'])}
+                                "table_context": table_context}
                 extend_data.update(update_dict)
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
