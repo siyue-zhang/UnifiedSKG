@@ -15,9 +15,9 @@ def maybe_normalize_float(span):
         return span
 
 
-def eval_ex_match(pred, gold_result):
-    pred = [span.strip() for span in pred.split(', ')]
-    gold_result = [span.strip() for span in gold_result.split(', ')]
+def eval_ex_match(pred, gold_result, separator=', '):
+    pred = [span.strip() for span in pred.split(separator)]
+    gold_result = [span.strip() for span in gold_result.split(separator)]
 
     clean_float = True  # TODO
     if clean_float:

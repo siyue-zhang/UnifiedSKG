@@ -43,6 +43,7 @@ class TrainDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
+        # self.raw_datasets = raw_datasets.select(range(100))
 
         cache_path = os.path.join(cache_root, 'wikitq_train.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
@@ -96,6 +97,7 @@ class DevDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
+        # self.raw_datasets = raw_datasets.select(range(100))
 
         cache_path = os.path.join(cache_root, 'wikitq_dev.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
@@ -146,6 +148,7 @@ class TestDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
+        # self.raw_datasets = raw_datasets.select(range(100))
 
         cache_path = os.path.join(cache_root, 'wikitq_test.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
