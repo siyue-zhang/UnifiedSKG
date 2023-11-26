@@ -407,11 +407,17 @@ def tsv_unescape_list(x):
 #     print('Correct:', num_correct)
 #     print('Accuracy:', round((num_correct + 1e-9) / (num_examples + 1e-9), 4))
 
-def eval_exec_match(pred, gold_result):
-    predicted_values = to_value_list(pred.split('|'))
-    target_values = to_value_list(gold_result.split('|'))
+def eval_exec_match(pred, gold_result, separator='|'):
+    predicted_values = to_value_list(pred.split(separator))
+    target_values = to_value_list(gold_result.split(separator))
     correct = check_denotation(target_values, predicted_values)
 
+    return correct
+
+def eval_tag_match(pred, ex_id, target_values_map, separator='|'):
+    target_values = target_values_map[ex_id]
+    predicted_values = to_value_list(pred.split(separator))
+    correct = check_denotation(target_values, predicted_values)
     return correct
 
 
@@ -420,12 +426,22 @@ class EvaluateTool(object):
     def __init__(self, args):
         self.args = args
         self.tagged_dataset_path = './third_party/squall/tables/tagged'
+        self.target_values_map = {}
+        for filename in os.listdir(self.tagged_dataset_path):
+            filename = os.path.join(self.tagged_dataset_path, filename)
+            print('Reading dataset from', filename)
+            with open(filename, 'r', 'utf8') as fin:
+                header = fin.readline().rstrip('\n').split('\t')
+                for line in fin:
+                    stuff = dict(zip(header, line.rstrip('\n').split('\t')))
+                    ex_id = stuff['id']
+                    original_strings = tsv_unescape_list(stuff['targetValue'])
+                    canon_strings = tsv_unescape_list(stuff['targetCanon'])
+                    self.target_values_map[ex_id] = to_value_list(
+                        original_strings, canon_strings)
+        print('Read', len(self.target_values_map), 'examples')
 
     def evaluate(self, preds, golds, section):
-        if section == 'train':
-            self.tagged = self.tagged_dataset_path + '/training.tagged'
-        elif 
-        self.
         # preds: ['', ' 0.0', ' full house', ' siim ennemuist, andri aganits', ' kim yu-na', ' new delhi, india', ' sweden', ' 1694.0', ' iryna shpylova', ' 2.0']
         # golds: list of dict
         # section: dev
@@ -435,13 +451,20 @@ class EvaluateTool(object):
         # print('golds: ', gold_inferreds)
         exec_match = []
         ex_match = []
+        tag_match = []
         for pred, gold_result in zip(preds, gold_inferreds):
             exec_match.append(eval_exec_match(pred, gold_result))
             ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
-
+            print(gold_result)
+            print(self.target_values_map.keys()[:5])
+            ex_id = gold_result['nt']
+            print(self.target_values_map[ex_id])
+            assert 1==2
+            tag_match.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
+    
         summary["all_ex"] = float(np.mean(ex_match))
         summary["exec_match"] = float(np.mean(exec_match))
-        summary["tag_match"] = float(np.mean(exec_match))
+        summary["tag_match"] = float(np.mean(tag_match))
 
         print('summary: ', summary)
 
