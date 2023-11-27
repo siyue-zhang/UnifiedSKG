@@ -48,7 +48,9 @@ def main() -> None:
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
-    # training_args.report_to=[] #debug
+    #debug
+    # training_args.report_to=[] 
+
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
         import wandb
 
@@ -97,8 +99,13 @@ def main() -> None:
         meta_tuning_data = {}
         for task, arg_path in args.arg_paths:
             task_args = Configure.Get(arg_path)
-            task_args.bert = args.bert
-            task_args.model = args.model
+            # new
+            task_args.bert, task_args.model = args.bert, args.model
+            if training_args.max_train_samples:
+                task_args.max_train_samples = training_args.max_train_samples
+            if training_args.max_eval_samples:
+                task_args.max_eval_samples = training_args.max_eval_samples
+
             print('task_args.bert.location:', task_args.bert.location)
             task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
                 path=task_args.dataset.loader_path,

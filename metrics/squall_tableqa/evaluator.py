@@ -429,7 +429,6 @@ class EvaluateTool(object):
         self.target_values_map = {}
         for filename in os.listdir(self.tagged_dataset_path):
             filename = os.path.join(self.tagged_dataset_path, filename)
-            print('Reading dataset from', filename)
             with open(filename, 'r', 'utf8') as fin:
                 header = fin.readline().rstrip('\n').split('\t')
                 for line in fin:
@@ -439,29 +438,22 @@ class EvaluateTool(object):
                     canon_strings = tsv_unescape_list(stuff['targetCanon'])
                     self.target_values_map[ex_id] = to_value_list(
                         original_strings, canon_strings)
-        print('Read', len(self.target_values_map), 'examples')
 
     def evaluate(self, preds, golds, section):
-        # preds: ['', ' 0.0', ' full house', ' siim ennemuist, andri aganits', ' kim yu-na', ' new delhi, india', ' sweden', ' 1694.0', ' iryna shpylova', ' 2.0']
+        # preds: list of string
         # golds: list of dict
         # section: dev
         summary = {}
         gold_inferreds = [item["seq_out"] for item in golds]
-        # print('preds: ', preds)
-        # print('golds: ', gold_inferreds)
         exec_match = []
         ex_match = []
         tag_match = []
-        for pred, gold_result in zip(preds, gold_inferreds):
+        for pred, gold_result, i in zip(preds, gold_inferreds, range(len(preds))):
             exec_match.append(eval_exec_match(pred, gold_result))
             ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
-            print(gold_result)
-            print(self.target_values_map.keys()[:5])
-            ex_id = gold_result['nt']
-            print(self.target_values_map[ex_id])
-            assert 1==2
+            ex_id = golds[i]['id']
             tag_match.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
-    
+
         summary["all_ex"] = float(np.mean(ex_match))
         summary["exec_match"] = float(np.mean(exec_match))
         summary["tag_match"] = float(np.mean(tag_match))
