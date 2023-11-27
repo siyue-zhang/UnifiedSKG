@@ -95,8 +95,6 @@ class TokenizedDataset(Dataset):
                 # assign the max input length into some large numbers, instead of using the "max_model_length"
                 # ,which the default is 512, which will hurt the performance a lot.
             )
-            print('------------')
-            print(tokenized_question_and_schemas)
             tokenized_inferred = self.tokenizer(
                 raw_item["seq_out"],
                 padding="max_length",
@@ -104,8 +102,6 @@ class TokenizedDataset(Dataset):
                 max_length=self.training_args.generation_max_length,
                 # We set the max_length of "seq_out" during training is the same with the one in inference.
             )
-            print('------------')
-            print(tokenized_inferred)
         tokenized_inferred_input_ids = torch.LongTensor(tokenized_inferred.data["input_ids"])
         # Here -100 will let the model not to compute the loss of the padding tokens.
         tokenized_inferred_input_ids[tokenized_inferred_input_ids == self.tokenizer.pad_token_id] = -100

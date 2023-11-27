@@ -48,8 +48,8 @@ def main() -> None:
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
-    #debug
-    # training_args.report_to=[] 
+    if training_args.max_train_samples:
+        training_args.report_to=[] 
 
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
         import wandb

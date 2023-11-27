@@ -19,7 +19,7 @@ def find_best_match(contents, col, ori):
 
 
 def fuzzy_replace(pred, table_id):
-    table_path = f'.third_party/squall/tables/json/{table_id}.json'
+    table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
     contents = contents["contents"]
@@ -42,7 +42,7 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols
+            assert col in cols, f'A: {col} not in {cols}, query ({pred})'
             best_match = find_best_match(contents, col, ori)
             best_match = best_match.replace('\'','\'\'')
             pred = pred.replace(f'\'{ori}\'', f'[X{n}]')
@@ -58,7 +58,7 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols
+            assert col in cols, f'B: {col} not in {cols}, query ({pred})'
             best_match = find_best_match(contents, col, ori)
             pred = pred.replace(ori, best_match)
     
@@ -72,7 +72,7 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols
+            assert col in cols, f'C: {col} not in {cols}, query ({pred})'
             for ori in [ori1, ori2]:
                 best_match = find_best_match(contents, col, ori)
                 pred = pred.replace(ori, best_match)
@@ -81,7 +81,7 @@ def fuzzy_replace(pred, table_id):
     # print(pairs)
     if len(pairs)>0:
         for col, ori1, ori2, ori3 in pairs:
-            assert col in cols
+            assert col in cols, f'D: {col} not in {cols}, query ({pred})'
             for ori in [ori1, ori2, ori3]:
                 best_match = find_best_match(contents, col, ori)
                 pred = pred.replace(ori, best_match)
@@ -102,18 +102,17 @@ def postprocess_text(preds, golds, section, fuzzy):
     # preds and labels for all eval samples
     # prepare the prediction format for the wtq evaluator
     predictions = []
-    for idex, (pred, gold) in enumerate(zip(preds, golds)):
-        print('pred: ', pred)
-        print('gold: ', gold)
-        assert 1==2
-        table_id = section["tbl"][idex]
-        nt_id = section["nt"][idex]
-        header = section["header"][idex]
-        nl = section["nl"][idex]
+    for pred, gold in zip(preds, golds):
+        table_id = gold['db_id']
+        nt_id = gold['id']
+        column_name = gold['db_column_names']['column_name'][1:]
+        ori_column_name = gold['db_column_names']['ori_column_name'][1:]
+        nl = gold['question']
+        label = gold['query']
         # repalce the natural language header with c1, c2, ... headers
-        for j, h in enumerate(header):
-            pred=pred.replace(h, 'c'+str(j+1))
-            label=label.replace(h, 'c'+str(j+1))
+        for j, h in enumerate(column_name):
+            pred=pred.replace(h, ori_column_name[j])
+            label=label.replace(h, ori_column_name[j])
             
         if fuzzy:
             pred = fuzzy_replace(pred, table_id)
@@ -133,8 +132,8 @@ class EvaluateTool(object):
 )
 
     def evaluate(self, preds, golds, section):
-        predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
         total = len(golds)
+        predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
         execution_accuracy = self.evaluator.evaluate(predictions)
 
         if section=='test':

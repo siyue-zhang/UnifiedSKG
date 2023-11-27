@@ -176,7 +176,7 @@ def serialize_schema(
         "query": query,
         "query_tokens": query_tokens,
         "converted_query": converted_query,
-        "nt": sample["nt"],
+        "id": sample["nt"],
         "header": raw_header,
         "question": ' '.join(sample["nl"]),
         "label": tgt,
@@ -210,6 +210,8 @@ class TrainDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         self.args = args
         self.raw_datasets = raw_datasets
+        if args.max_train_samples:
+            self.raw_datasets = raw_datasets.select(range(args.max_train_samples))
         self.table_contents = {}
 
         cache_path = os.path.join(cache_root, 'squall_train.cache')
@@ -240,6 +242,8 @@ class DevDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         self.args = args
         self.raw_datasets = raw_datasets
+        if args.max_eval_samples:
+            self.raw_datasets = raw_datasets.select(range(args.max_eval_samples))
 
         cache_path = os.path.join(cache_root, 'squall_dev.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
@@ -269,6 +273,8 @@ class TestDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         self.args = args
         self.raw_datasets = raw_datasets
+        if args.max_eval_samples:
+            self.raw_datasets = raw_datasets.select(range(args.max_eval_samples))
 
         cache_path = os.path.join(cache_root, 'squall_test.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
