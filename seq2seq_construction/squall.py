@@ -23,13 +23,6 @@ def squall_get_input(
     return prefix + question.strip() + " " + serialized_schema.strip()
 
 
-def squall_get_target(
-    query: str,
-    db_id: str,
-    target_with_db_id: bool,
-) -> str:
-    return f"{db_id} | {query}" if target_with_db_id else query
-
 
 def squall_add_serialized_schema(ex: dict, args) -> dict:
     if getattr(args.seq2seq, "schema_serialization_with_nl"):
@@ -49,14 +42,12 @@ def squall_add_serialized_schema(ex: dict, args) -> dict:
 
 
 
-def squall_pre_process_one_function(item: dict, args):
+def squall_pre_process_one_function(item: dict):
     prefix = ""
-    seq_out = squall_get_target(
-        query=item["converted_query"],
-        db_id=item["db_id"],
-        target_with_db_id=args.seq2seq.target_with_db_id,
-    )
-
+    if "converted_query" in item:
+        seq_out = item["converted_query"]
+    else:
+        seq_out = None
     return prefix + item["question"].strip(), seq_out
 
 
@@ -230,49 +221,10 @@ class TrainDataset(Dataset):
                 extend_data = deepcopy(raw_data)
                 extend_data.update(squall_add_serialized_schema(extend_data, args))
 
-                question, seq_out = squall_pre_process_one_function(extend_data, args)
-                print('question: ')
-                print(question)
-                print('seq_out: ', seq_out)
-
-                nt = extend_data['nt']
-                json_path = extend_data['json_path']
-                table_id = extend_data['db_id']
-                with open(json_path, "r") as f:
-                    contents = json.load(f)
-                print(contents)
-                contents = contents['content']
-                context_table = {'header': contents['headers']}
-                cols = []
-                for c in contents['contents']:
-                    for cc in c:
-                        cols.append(cc['data'])
-                rows = []
-                for n in range(max([len(c) for c in cols])):
-                    row = []
-                    for m in range(len(cols)):
-                        if n<len(cols[m]):
-                            row.append(cols[m][n])
-                        else:
-                            row.append(None)
-
-                    
-                # table = {'header': [,], 'rows': [[,],[,],...]}
-                # table_dict = {'header': df.columns.tolist(), 'rows': df.values.tolist()}
-
-                if db_id not in self.db_contents:
-                    database_dict = read_sqlite_database(db_path)
-                    self.db_contents['db_id'] = database_dict
-                else:
-                    database_dict = self.db_contents['db_id']
-
-                print(raw_data)
-                assert 1==2
-                table_context = None
+                question, seq_out = squall_pre_process_one_function(extend_data)
                 extend_data.update({"struct_in": extend_data["serialized_schema"].strip(),
                                     "text_in": question,
-                                    "seq_out": seq_out,
-                                    "table_context": table_context})
+                                    "seq_out": seq_out})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -298,7 +250,7 @@ class DevDataset(Dataset):
                 extend_data = deepcopy(raw_data)
                 extend_data.update(squall_add_serialized_schema(extend_data, args))
 
-                question, seq_out = squall_pre_process_one_function(extend_data, args=self.args)
+                question, seq_out = squall_pre_process_one_function(extend_data)
                 extend_data.update({"struct_in": extend_data["serialized_schema"].strip(),
                                     "text_in": question,
                                     "seq_out": seq_out})
@@ -327,10 +279,9 @@ class TestDataset(Dataset):
                 extend_data = deepcopy(raw_data)
                 extend_data.update(squall_add_serialized_schema(extend_data, args))
 
-                question, seq_out = squall_pre_process_one_function(extend_data, args=self.args)
+                question, _ = squall_pre_process_one_function(extend_data)
                 extend_data.update({"struct_in": extend_data["serialized_schema"].strip(),
-                                    "text_in": question,
-                                    "seq_out": seq_out})
+                                    "text_in": question})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)

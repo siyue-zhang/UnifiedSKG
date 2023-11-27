@@ -97,11 +97,15 @@ def fuzzy_replace(pred, table_id):
 
     return pred
 
-def postprocess_text(preds, labels, section, fuzzy):
+def postprocess_text(preds, golds, section, fuzzy):
+
     # preds and labels for all eval samples
     # prepare the prediction format for the wtq evaluator
     predictions = []
-    for idex, (pred, label) in enumerate(zip(preds, labels)):
+    for idex, (pred, gold) in enumerate(zip(preds, golds)):
+        print('pred: ', pred)
+        print('gold: ', gold)
+        assert 1==2
         table_id = section["tbl"][idex]
         nt_id = section["nt"][idex]
         header = section["header"][idex]
@@ -129,15 +133,16 @@ class EvaluateTool(object):
 )
 
     def evaluate(self, preds, golds, section):
-        print('---------', preds, '\n', golds, '\n', section)
-        assert 1==2
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
         total = len(golds)
         execution_accuracy = self.evaluator.evaluate(predictions)
-        logical_form = 0
-        for d in predictions:
-            if d['result'][0]['sql'] == d['result'][0]['tgt']:
-                logical_form += 1
 
-        return {"logical_form": logical_form/total, 
-                "execution_accuracy":execution_accuracy/total}
+        if section=='test':
+            return {"execution_accuracy":execution_accuracy/total}
+        else:
+            logical_form = 0
+            for d in predictions:
+                if d['result'][0]['sql'] == d['result'][0]['tgt']:
+                    logical_form += 1
+            return {"logical_form": logical_form/total, 
+                    "execution_accuracy":execution_accuracy/total}
