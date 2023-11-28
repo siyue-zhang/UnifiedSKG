@@ -6,22 +6,39 @@ from fuzzywuzzy import process
 import json
 
 def find_best_match(contents, col, ori):
-    strings = []
+    final_strings = []
+    done = False
     for c in contents:
         for cc in c:
             if col == cc['col']:
                 strings = cc['data']
-                strings = [str(s) for s in strings]
-                strings = list(set(strings))
-    assert len(strings)>0
-    best_match, _ = process.extractOne(ori, strings)
+                for item in strings:
+                    if isinstance(item, list):
+                        for ii in item:
+                            final_strings.append(str(ii))
+                    else:
+                        final_strings.append(str(item))
+                done = True
+            if done:
+                break
+        if done:
+            break
+    assert len(final_strings)>0, f'strings empty {final_strings}'
+    final_strings = list(set(final_strings))
+    best_match, _ = process.extractOne(ori, final_strings)
     return best_match
 
 def find_fuzzy_col(col, mapping):
     assert col not in mapping
     # col->ori
     mapping_b = {value: key for key, value in mapping.items()}
-    best_match, _ = process.extractOne(mapping[col], [value for _, value in mapping.items()])
+    match = re.match(r'^(c\d+)', col)
+    if match:
+        c_num = match.group(1)
+        assert c_num in mapping, f'{c_num} not in {mapping}'
+        best_match, _ = process.extractOne(col.replace(c_num, mapping[c_num]), [value for _, value in mapping.items()])
+    else:
+        best_match, _ = process.extractOne(col, [value for _, value in mapping.items()])
     return mapping_b[best_match]
 
 def fuzzy_replace(pred, table_id, mapping):
@@ -61,7 +78,7 @@ def fuzzy_replace(pred, table_id, mapping):
             buf.append(best_match)
 
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
-    # print(pairs)
+    # print(pairs,'ppppp')
     if len(pairs)>0:
         for col, ori in pairs:
             if col not in cols:
@@ -79,7 +96,7 @@ def fuzzy_replace(pred, table_id, mapping):
             pred = pred.replace(ori, best_match)
     
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?\)', pred)
-    # print(pairs)
+    # print(pairs, 'ttttt')
     if len(pairs)>0:
         for col, ori1, ori2 in pairs:
             if col not in cols:
