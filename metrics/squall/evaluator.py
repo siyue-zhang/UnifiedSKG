@@ -17,8 +17,14 @@ def find_best_match(contents, col, ori):
     best_match, _ = process.extractOne(ori, strings)
     return best_match
 
+def find_fuzzy_col(col, mapping):
+    assert col not in mapping
+    # col->ori
+    mapping_b = {value: key for key, value in mapping.items()}
+    best_match, _ = process.extractOne(mapping[col], [value for _, value in mapping.items()])
+    return mapping_b[best_match]
 
-def fuzzy_replace(pred, table_id):
+def fuzzy_replace(pred, table_id, mapping):
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
@@ -42,7 +48,12 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols, f'A: {col} not in {cols}, query ({pred})'
+            if col not in cols:
+                print(f'A: {col} not in {cols}, query ({pred})')
+                col_replace = find_fuzzy_col(col, mapping)
+                pred = pred.replace(col, col_replace)
+                print(f' {col}-->{col_replace}')
+                col = col_replace
             best_match = find_best_match(contents, col, ori)
             best_match = best_match.replace('\'','\'\'')
             pred = pred.replace(f'\'{ori}\'', f'[X{n}]')
@@ -58,7 +69,12 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols, f'B: {col} not in {cols}, query ({pred})'
+            if col not in cols:
+                print(f'B: {col} not in {cols}, query ({pred})')
+                col_replace = find_fuzzy_col(col, mapping)
+                pred = pred.replace(col, col_replace)
+                print(f' {col}-->{col_replace}')
+                col = col_replace
             best_match = find_best_match(contents, col, ori)
             pred = pred.replace(ori, best_match)
     
@@ -72,7 +88,12 @@ def fuzzy_replace(pred, table_id):
                     col = col.split('and')[-1].strip()
                 if 'or ' in col:
                     col = col.split('or')[-1].strip()
-            assert col in cols, f'C: {col} not in {cols}, query ({pred})'
+            if col not in cols:
+                print(f'C: {col} not in {cols}, query ({pred})')
+                col_replace = find_fuzzy_col(col, mapping)
+                pred = pred.replace(col, col_replace)
+                print(f' {col}-->{col_replace}')
+                col = col_replace
             for ori in [ori1, ori2]:
                 best_match = find_best_match(contents, col, ori)
                 pred = pred.replace(ori, best_match)
@@ -81,7 +102,12 @@ def fuzzy_replace(pred, table_id):
     # print(pairs)
     if len(pairs)>0:
         for col, ori1, ori2, ori3 in pairs:
-            assert col in cols, f'D: {col} not in {cols}, query ({pred})'
+            if col not in cols:
+                print(f'D: {col} not in {cols}, query ({pred})')
+                col_replace = find_fuzzy_col(col, mapping)
+                pred = pred.replace(col, col_replace)
+                print(f' {col}-->{col_replace}')
+                col = col_replace
             for ori in [ori1, ori2, ori3]:
                 best_match = find_best_match(contents, col, ori)
                 pred = pred.replace(ori, best_match)
@@ -115,7 +141,8 @@ def postprocess_text(preds, golds, section, fuzzy):
             label=label.replace(h, ori_column_name[j])
             
         if fuzzy:
-            pred = fuzzy_replace(pred, table_id)
+            mapping = {ori: col for ori, col in zip(ori_column_name, column_name)}
+            pred = fuzzy_replace(pred, table_id, mapping)
 
         result_dict = {"sql": pred, "id": nt_id, "tgt": label}
         res = {"table_id": table_id, "result": [result_dict], 'nl': nl}
