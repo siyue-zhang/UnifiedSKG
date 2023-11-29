@@ -141,10 +141,6 @@ class TrainDataset(Dataset):
                 query = raw_data["query"]
 
                 gold_result = execute_query(db_path, query)
-                # print('\ndb: ', db_path)
-                # print('question: ', question)
-                # print('query: ', query)
-                # print('gold_result: ', gold_result)
                 if db_id not in self.db_contents:
                     database_dict = read_sqlite_database(db_path)
                     self.db_contents['db_id'] = database_dict
