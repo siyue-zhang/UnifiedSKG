@@ -445,14 +445,19 @@ class EvaluateTool(object):
         # section: dev
         summary = {}
         gold_inferreds = [item["seq_out"] for item in golds]
-        exec_match = []
-        ex_match = []
+        # exec_match = []
+        # ex_match = []
         tag_match = []
         for pred, gold_result, i in zip(preds, gold_inferreds, range(len(preds))):
-            exec_match.append(eval_exec_match(pred, gold_result))
-            ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
+            # exec_match.append(eval_exec_match(pred, gold_result))
+            # ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
             ex_id = golds[i]['id']
             tag_match.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
+
+        for i in range(len(golds)):
+            golds[i].update({
+                "execution_accuracy": tag_match[i],
+            })
 
         # summary["all_ex"] = float(np.mean(ex_match))
         # summary["exec_match"] = float(np.mean(exec_match))

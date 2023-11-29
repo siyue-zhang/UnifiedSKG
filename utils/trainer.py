@@ -218,6 +218,8 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
         finally:
             self.compute_metrics = compute_metrics
 
+        print(output)
+        assert 1==2
         if self.compute_metrics is not None:
 
             eval_preds = self._post_process_function(
