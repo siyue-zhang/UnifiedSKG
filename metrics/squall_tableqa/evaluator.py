@@ -454,10 +454,8 @@ class EvaluateTool(object):
             ex_id = golds[i]['id']
             tag_match.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
 
-        summary["all_ex"] = float(np.mean(ex_match))
-        summary["exec_match"] = float(np.mean(exec_match))
+        # summary["all_ex"] = float(np.mean(ex_match))
+        # summary["exec_match"] = float(np.mean(exec_match))
         summary["tag_match"] = float(np.mean(tag_match))
-
-        print('summary: ', summary)
 
         return summary

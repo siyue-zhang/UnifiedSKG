@@ -188,14 +188,21 @@ class EvaluateTool(object):
     def evaluate(self, preds, golds, section):
         total = len(golds)
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
-        execution_accuracy = self.evaluator.evaluate(predictions)
+        num_correct, correct_flag, _, predicted = self.evaluator.evaluate(predictions, with_correct_flag=True, with_target=True)
+        for i in range(len(golds)):
+            golds[i].update({
+                "execution_accuracy": correct_flag[i],
+                "prediction": predicted[i]
+            })
+        # if section=='test':
+        #     return {"execution_accuracy":num_correct/total}
+        # else:
+        #     logical_form = 0
+        #     for d in predictions:
+        #         if d['result'][0]['sql'] == d['result'][0]['tgt']:
+        #             logical_form += 1
+        #     return {"logical_form": logical_form/total, 
+        #             "execution_accuracy":num_correct/total}
+        
+        return {"execution_accuracy":num_correct/total}
 
-        if section=='test':
-            return {"execution_accuracy":execution_accuracy/total}
-        else:
-            logical_form = 0
-            for d in predictions:
-                if d['result'][0]['sql'] == d['result'][0]['tgt']:
-                    logical_form += 1
-            return {"logical_form": logical_form/total, 
-                    "execution_accuracy":execution_accuracy/total}
