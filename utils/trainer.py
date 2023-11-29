@@ -24,6 +24,7 @@ from transformers.trainer_utils import PredictionOutput, speed_metrics
 from transformers.training_args import ParallelMode
 
 from .training_arguments import WrappedSeq2SeqTrainingArguments
+from .postproc import postproc
 
 _is_torch_generator_available = False
 if version.parse(torch.__version__) >= version.parse("1.6"):
@@ -141,7 +142,6 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
         eval_dataloader = self.get_eval_dataloader(eval_dataset)
         eval_examples = self.eval_examples if eval_examples is None else eval_examples
         start_time = time.time()
-
         # print([eval_examples[idx]['arg_path'] for idx in range(len(eval_examples))])
 
         # Temporarily disable metric computation, we will do it in the loop here.
@@ -167,6 +167,12 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
                 "eval_{}".format(self.state.epoch),
             )
             summary = self.compute_metrics(eval_preds, section="dev")
+            correct_flag = None
+            if isinstance(summary, tuple):
+                correct_flag=summary[1]
+                summary=summary[0]
+            if correct_flag:
+                postproc(self.args, 'eval', self.state.epoch, correct_flag)
             output.metrics.update(summary)
 
         n_samples = len(eval_dataset if eval_dataset is not None else self.eval_dataset)
@@ -218,13 +224,18 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
         finally:
             self.compute_metrics = compute_metrics
 
-        print(output)
-        assert 1==2
         if self.compute_metrics is not None:
 
             eval_preds = self._post_process_function(
                 test_examples, output.predictions, metric_key_prefix)
-            output.metrics.update(self.compute_metrics(eval_preds, section="test"))
+            summary = self.compute_metrics(eval_preds, section="test")
+            correct_flag = None
+            if isinstance(summary, tuple):
+                correct_flag=summary[1]
+                summary=summary[0]
+            if correct_flag:
+                postproc(self.args, 'test', self.state.epoch, correct_flag)
+            output.metrics.update(summary)
 
         output.metrics.update(speed_metrics(metric_key_prefix, start_time, len(test_dataset)))
 

@@ -45,10 +45,9 @@ def find_fuzzy_col(col, mapping):
         best_match, _ = process.extractOne(col, [value for _, value in mapping.items()])
     return mapping_b[best_match]
 
+
 def fuzzy_replace(pred, table_id, mapping):
-    exception_keywords = ['from', 'w', 'select', 'where', 'limit', 'order']
-    exception_keywords += [str(i) for i in range(10)]
-    
+    verbose = True
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
@@ -62,7 +61,6 @@ def fuzzy_replace(pred, table_id, mapping):
 
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.*?".*?\'.*".*?)\'', pred)
     # select c5 from w where c2 = '"i'll be your fool tonight"'
-    # print(pairs)
     buf = []
     n = 0
     if len(pairs)>0:
@@ -84,60 +82,77 @@ def fuzzy_replace(pred, table_id, mapping):
             n += 1
             buf.append(best_match)
 
-    pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
-    # print(pairs,'ppppp')
-    if len(pairs)>0:
-        for col, ori in pairs:
-            if col not in cols:
-                if 'and' in col:
-                    col = col.split('and')[-1].strip()
-                if 'or ' in col:
-                    col = col.split('or')[-1].strip()
-            if col not in cols:
-                print(f'B: {col} not in {cols}, query ({pred})')
-                col_replace = find_fuzzy_col(col, mapping)
-                pred = pred.replace(col, col_replace)
-                print(f' {col}-->{col_replace}')
-                col = col_replace
-            best_match = find_best_match(contents, col, ori)
-            if best_match not in exception_keywords:
-                pred = pred.replace(ori, best_match)
-    
-    pairs = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?\)', pred)
-    # print(pairs, 'ttttt')
-    if len(pairs)>0:
-        for col, ori1, ori2 in pairs:
-            if col not in cols:
-                if 'and' in col:
-                    print()
-                    col = col.split('and')[-1].strip()
-                if 'or ' in col:
-                    col = col.split('or')[-1].strip()
-            if col not in cols:
-                print(f'C: {col} not in {cols}, query ({pred})')
-                col_replace = find_fuzzy_col(col, mapping)
-                pred = pred.replace(col, col_replace)
-                print(f' {col}-->{col_replace}')
-                col = col_replace
-            for ori in [ori1, ori2]:
-                best_match = find_best_match(contents, col, ori)
-                if best_match not in exception_keywords:
-                    pred = pred.replace(ori, best_match)
+    pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
+    for match in pairs:
+        start = match.start(0)
+        end = match.end(0)
+        col = pred[match.start(1):match.end(1)]
+        ori = pred[match.start(2):match.end(2)]
+        to_replace = pred[start:end]
+        if verbose:
+            print(f'B: part to be replaced: {to_replace}, col: {col}, string: {ori}')
+        if col not in cols:
+            if 'and' in col:
+                col = col.split('and')[-1].strip()
+            if 'or ' in col:
+                col = col.split('or')[-1].strip()
+        if col not in cols:
+            print(f'B: {col} not in {cols}, query ({pred})')
+            col_replace = find_fuzzy_col(col, mapping)
+            to_replace = to_replace.replace(col, col_replace)
+            print(f' {col}-->{col_replace}')
+            col = col_replace
+        best_match = find_best_match(contents, col, ori)
+        to_replace = to_replace.replace(ori, best_match)
+        pred = pred[:start] + to_replace + pred[end:]
 
-    pairs = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
-    # print(pairs)
-    if len(pairs)>0:
-        for col, ori1, ori2, ori3 in pairs:
-            if col not in cols:
-                print(f'D: {col} not in {cols}, query ({pred})')
-                col_replace = find_fuzzy_col(col, mapping)
-                pred = pred.replace(col, col_replace)
-                print(f' {col}-->{col_replace}')
-                col = col_replace
-            for ori in [ori1, ori2, ori3]:
-                best_match = find_best_match(contents, col, ori)
-                if best_match not in exception_keywords:
-                    pred = pred.replace(ori, best_match)
+    pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?\)', pred)
+    for match in pairs:
+        start = match.start(0)
+        end = match.end(0)
+        col = pred[match.start(1):match.end(1)]
+        ori1 = pred[match.start(2):match.end(2)]
+        ori2 = pred[match.start(3):match.end(3)]
+        to_replace = pred[start:end]
+        if verbose:
+            print(f'C: part to be replaced: {to_replace}, col: {col}, string: {ori1}, {ori2}')
+        if col not in cols:
+            if 'and' in col:
+                col = col.split('and')[-1].strip()
+            if 'or ' in col:
+                col = col.split('or')[-1].strip()
+        if col not in cols:
+            print(f'C: {col} not in {cols}, query ({pred})')
+            col_replace = find_fuzzy_col(col, mapping)
+            to_replace = to_replace.replace(col, col_replace)
+            print(f' {col}-->{col_replace}')
+            col = col_replace
+        for ori in [ori1, ori2]:
+            best_match = find_best_match(contents, col, ori)
+            to_replace = to_replace.replace(ori, best_match)
+        pred = pred[:start] + to_replace + pred[end:]
+
+    pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
+    for match in pairs:
+        start = match.start(0)
+        end = match.end(0)
+        col = pred[match.start(1):match.start(1)]
+        ori1 = pred[match.start(2):match.end(2)]
+        ori2 = pred[match.start(3):match.end(3)]
+        ori3 = pred[match.start(4):match.end(4)]
+        to_replace = pred[start:end]
+        if verbose:
+            print(f'D: part to be replaced: {to_replace}, col: {col}, string: {ori1}, {ori2}, {ori3}')
+        if col not in cols:
+            print(f'D: {col} not in {cols}, query ({pred})')
+            col_replace = find_fuzzy_col(col, mapping)
+            to_replace = to_replace.replace(col, col_replace)
+            print(f' {col}-->{col_replace}')
+            col = col_replace
+        for ori in [ori1, ori2, ori3]:
+            best_match = find_best_match(contents, col, ori)
+            to_replace = to_replace.replace(ori, best_match)
+        pred = pred[:start] + to_replace + pred[end:]
 
     for j in range(len(buf)):
         pred = pred.replace(f'[X{j}]', f'\'{buf[j]}\'')
@@ -186,14 +201,11 @@ class EvaluateTool(object):
 )
 
     def evaluate(self, preds, golds, section):
+        correct_flag = None
         total = len(golds)
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
         num_correct, correct_flag, _, predicted = self.evaluator.evaluate(predictions, with_correct_flag=True, with_target=True)
-        for i in range(len(golds)):
-            golds[i].update({
-                "execution_accuracy": correct_flag[i],
-                "prediction": predicted[i]
-            })
+        
         # if section=='test':
         #     return {"execution_accuracy":num_correct/total}
         # else:
@@ -204,5 +216,5 @@ class EvaluateTool(object):
         #     return {"logical_form": logical_form/total, 
         #             "execution_accuracy":num_correct/total}
         
-        return {"execution_accuracy":num_correct/total}
+        return {"execution_accuracy":num_correct/total}, correct_flag
 
