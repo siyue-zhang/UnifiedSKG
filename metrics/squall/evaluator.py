@@ -35,13 +35,20 @@ def find_fuzzy_col(col, mapping):
     match = re.match(r'^(c\d+)', col)
     if match:
         c_num = match.group(1)
-        assert c_num in mapping, f'{c_num} not in {mapping}'
-        best_match, _ = process.extractOne(col.replace(c_num, mapping[c_num]), [value for _, value in mapping.items()])
+        # assert c_num in mapping, f'{c_num} not in {mapping}'
+        if c_num not in mapping:
+            print(f'predicted {c_num} is not valid ({mapping})')
+            return mapping.keys()[0]
+        else:
+            best_match, _ = process.extractOne(col.replace(c_num, mapping[c_num]), [value for _, value in mapping.items()])
     else:
         best_match, _ = process.extractOne(col, [value for _, value in mapping.items()])
     return mapping_b[best_match]
 
 def fuzzy_replace(pred, table_id, mapping):
+    exception_keywords = ['from', 'w', 'select', 'where', 'limit', 'order']
+    exception_keywords += [str(i) for i in range(10)]
+    
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
@@ -93,7 +100,8 @@ def fuzzy_replace(pred, table_id, mapping):
                 print(f' {col}-->{col_replace}')
                 col = col_replace
             best_match = find_best_match(contents, col, ori)
-            pred = pred.replace(ori, best_match)
+            if best_match not in exception_keywords:
+                pred = pred.replace(ori, best_match)
     
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?\)', pred)
     # print(pairs, 'ttttt')
@@ -113,7 +121,8 @@ def fuzzy_replace(pred, table_id, mapping):
                 col = col_replace
             for ori in [ori1, ori2]:
                 best_match = find_best_match(contents, col, ori)
-                pred = pred.replace(ori, best_match)
+                if best_match not in exception_keywords:
+                    pred = pred.replace(ori, best_match)
 
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
     # print(pairs)
@@ -127,7 +136,8 @@ def fuzzy_replace(pred, table_id, mapping):
                 col = col_replace
             for ori in [ori1, ori2, ori3]:
                 best_match = find_best_match(contents, col, ori)
-                pred = pred.replace(ori, best_match)
+                if best_match not in exception_keywords:
+                    pred = pred.replace(ori, best_match)
 
     for j in range(len(buf)):
         pred = pred.replace(f'[X{j}]', f'\'{buf[j]}\'')

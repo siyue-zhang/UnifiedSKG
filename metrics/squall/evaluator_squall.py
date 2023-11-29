@@ -484,17 +484,17 @@ class Evaluator:
             return num_correct
         
 
-    def evaluate_rtr(self, preds, labels):
-        preds = [txt.split('|') for txt in preds]
-        labels = [txt.split('|') for txt in labels]
+    # def evaluate_rtr(self, preds, labels):
+    #     preds = [txt.split('|') for txt in preds]
+    #     labels = [txt.split('|') for txt in labels]
 
-        num_examples, num_correct = 0, 0
-        for p, l in zip(preds, labels):
-            p = to_value_list(p)
-            l = to_value_list(l)
-            correct = check_denotation(p, l)
-            num_examples += 1
-            if correct:
-                num_correct += 1
+    #     num_examples, num_correct = 0, 0
+    #     for p, l in zip(preds, labels):
+    #         p = to_value_list(p)
+    #         l = to_value_list(l)
+    #         correct = check_denotation(p, l)
+    #         num_examples += 1
+    #         if correct:
+    #             num_correct += 1
 
-        return num_correct
+    #     return num_correct

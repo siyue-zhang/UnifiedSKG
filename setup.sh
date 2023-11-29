@@ -40,22 +40,23 @@ python ./train.py \
   --save_steps 500 \
   --save_total_limit 1 \
   --load_best_model_at_end \
-  --gradient_accumulation_steps 64 \
+  --gradient_accumulation_steps 16 \
   --num_train_epochs 50 \
   --adafactor true \
-  --learning_rate 2e-5 \
+  --learning_rate 3e-4 \
   --do_train \
   --do_eval \
   --do_predict \
   --predict_with_generate \
   --output_dir output/T5_large_finetune_squall \
   --overwrite_output_dir \
-  --per_device_train_batch_size 2 \
+  --per_device_train_batch_size 4 \
   --per_device_eval_batch_size 8 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
   --input_max_length 1024 \
-  --ddp_find_unused_parameters true \
+  --ddp_find_unused_parameters true 
+
   --max_train_samples 1000 \
   --max_eval_samples 100
 
