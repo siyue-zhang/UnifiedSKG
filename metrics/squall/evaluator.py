@@ -83,19 +83,27 @@ def fuzzy_replace(pred, table_id, mapping):
             buf.append(best_match)
 
     pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
-    for match in pairs:
+    tokens = []
+    replacement = []
+    for idx, match in enumerate(pairs):
         start = match.start(0)
         end = match.end(0)
         col = pred[match.start(1):match.end(1)]
         ori = pred[match.start(2):match.end(2)]
         to_replace = pred[start:end]
-        if verbose:
-            print(f'B: part to be replaced: {to_replace}, col: {col}, string: {ori}')
+
+        token = str(idx) + '_'*(end-start-len(str(idx)))
+        tokens.append(token)
+        pred = pred[:start] + token + pred[end:]
+
         if col not in cols:
             if 'and' in col:
                 col = col.split('and')[-1].strip()
             if 'or ' in col:
                 col = col.split('or')[-1].strip()
+        if verbose:
+            print(f'B: part to be replaced: {to_replace}, col: {col}, string: {ori}')
+
         if col not in cols:
             print(f'B: {col} not in {cols}, query ({pred})')
             col_replace = find_fuzzy_col(col, mapping)
@@ -104,36 +112,55 @@ def fuzzy_replace(pred, table_id, mapping):
             col = col_replace
         best_match = find_best_match(contents, col, ori)
         to_replace = to_replace.replace(ori, best_match)
-        pred = pred[:start] + to_replace + pred[end:]
+        replacement.append(to_replace)
+
+    for i in range(len(tokens)):
+        pred = pred.replace(tokens[i], replacement[i])
+
 
     pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?\)', pred)
-    for match in pairs:
+    tokens = []
+    replacement = []
+    for idx, match in enumerate(pairs):
         start = match.start(0)
         end = match.end(0)
         col = pred[match.start(1):match.end(1)]
         ori1 = pred[match.start(2):match.end(2)]
         ori2 = pred[match.start(3):match.end(3)]
         to_replace = pred[start:end]
-        if verbose:
-            print(f'C: part to be replaced: {to_replace}, col: {col}, string: {ori1}, {ori2}')
+
+        token = str(idx) + '_'*(end-start-len(str(idx)))
+        tokens.append(token)
+        pred = pred[:start] + token + pred[end:]
+
         if col not in cols:
             if 'and' in col:
                 col = col.split('and')[-1].strip()
             if 'or ' in col:
                 col = col.split('or')[-1].strip()
+        if verbose:
+            print(f'C: part to be replaced: {to_replace}, col: {col}, string: {ori1}, {ori2}')
+ 
         if col not in cols:
             print(f'C: {col} not in {cols}, query ({pred})')
             col_replace = find_fuzzy_col(col, mapping)
             to_replace = to_replace.replace(col, col_replace)
             print(f' {col}-->{col_replace}')
             col = col_replace
+
         for ori in [ori1, ori2]:
             best_match = find_best_match(contents, col, ori)
             to_replace = to_replace.replace(ori, best_match)
-        pred = pred[:start] + to_replace + pred[end:]
+        replacement.append(to_replace)
+
+    for i in range(len(tokens)):
+        pred = pred.replace(tokens[i], replacement[i])
+
 
     pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
-    for match in pairs:
+    tokens = []
+    replacement = []
+    for idx, match in enumerate(pairs):
         start = match.start(0)
         end = match.end(0)
         col = pred[match.start(1):match.start(1)]
@@ -141,6 +168,11 @@ def fuzzy_replace(pred, table_id, mapping):
         ori2 = pred[match.start(3):match.end(3)]
         ori3 = pred[match.start(4):match.end(4)]
         to_replace = pred[start:end]
+
+        token = str(idx) + '_'*(end-start-len(str(idx)))
+        tokens.append(token)
+        pred = pred[:start] + token + pred[end:]
+
         if verbose:
             print(f'D: part to be replaced: {to_replace}, col: {col}, string: {ori1}, {ori2}, {ori3}')
         if col not in cols:
@@ -152,7 +184,10 @@ def fuzzy_replace(pred, table_id, mapping):
         for ori in [ori1, ori2, ori3]:
             best_match = find_best_match(contents, col, ori)
             to_replace = to_replace.replace(ori, best_match)
-        pred = pred[:start] + to_replace + pred[end:]
+        replacement.append(to_replace)
+
+    for i in range(len(tokens)):
+        pred = pred.replace(tokens[i], replacement[i])
 
     for j in range(len(buf)):
         pred = pred.replace(f'[X{j}]', f'\'{buf[j]}\'')

@@ -172,9 +172,6 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
                 correct_flag=summary[1]
                 summary=summary[0]
             if correct_flag:
-                # print('before post proc eval')
-                # postproc(self.args, 'eval', self.state.epoch, correct_flag)
-                # print('after post proc')
                 file_path = f"{self.args.output_dir}/predictions_eval_{self.state.epoch}_flag.json"
                 with open(file_path, "w") as f:
                     json.dump(correct_flag, f, indent=4)
@@ -239,9 +236,6 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
                 correct_flag=summary[1]
                 summary=summary[0]
             if correct_flag:
-                # print('before post proc predict')
-                # postproc(self.args, 'test', self.state.epoch, correct_flag)
-                # print('post proc done')
                 file_path = f"{self.args.output_dir}/predictions_predict_flag.json"
                 with open(file_path, "w") as f:
                     json.dump(correct_flag, f, indent=4)

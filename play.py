@@ -34,15 +34,39 @@
 #     # Close the database connection
 
 import re
-pred = "select count ( c3 ) from w where c4_list = '7\" vinyl'"
-ans = re.finditer(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
-for x in ans:
-    s = x.start(0)
-    e = x.end(0)
-    print(pred[s:e])
-    s = x.start(1)
-    e = x.end(1)
-    print(pred[s:e])
-    s = x.start(2)
-    e = x.end(2)
-    print(pred[s:e])
+from copy import deepcopy
+pred = " select ( select c6_number from w where c2 = 'india' ) - ( select c6_number from w where c2 = 'pakistan' )"
+pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.*?".*?\'.*".*?)\'', pred)
+pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.{1,}?)\'', pred)
+print(pred)
+tokens = []
+replacement = []
+for idx, match in enumerate(pairs):
+    start = match.start(0)
+    end = match.end(0)
+    col = pred[match.start(1):match.end(1)]
+    ori = pred[match.start(2):match.end(2)]
+    to_replace = pred[start:end]
+
+    token = str(idx) + '_'*(end-start-len(str(idx)))
+    tokens.append(token)
+    pred = pred[:start] + token + pred[end:]
+    to_replace = to_replace.replace(ori, 'pakistan')
+    replacement.append(to_replace)
+print(pred)
+
+for i in range(len(tokens)):
+    pred = pred.replace(tokens[i], replacement[i])
+print(pred)
+
+# for idx, match in enumerate(pairs_copy):
+#     start = match.start(0)
+#     end = match.end(0)
+#     col = pred[match.start(1):match.end(1)]
+#     ori = pred[match.start(2):match.end(2)]
+#     to_replace = pred[start:end]
+#     print(f'B: part to be replaced: {to_replace}, col: {col}, string: {ori}')
+#     to_replace = to_replace.replace(ori, 'pakistan')
+#     pred_copy = pred_copy.replace(str(idx) + '_'*(end-start-len(str(idx))), to_replace)
+# print(pred_copy)
+

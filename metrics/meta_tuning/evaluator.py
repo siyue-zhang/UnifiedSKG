@@ -34,6 +34,8 @@ class EvaluateTool(object):
             if isinstance(summary_tmp, tuple):
                 correct_flag=summary_tmp[1]
                 summary_tmp=summary_tmp[0]
+            else:
+                correct_flag = None
             for key, metric in summary_tmp.items():  # TODO
                 summary[os.path.join(arg_path, key)] = metric
             # summary[os.path.join(arg_path, args.train.stop)] = summary_tmp[args.train.stop]

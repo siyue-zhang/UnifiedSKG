@@ -140,17 +140,23 @@ class TrainDataset(Dataset):
                 question = raw_data["question"]
                 query = raw_data["query"]
 
-                gold_result = execute_query(db_path, query)
-                if len(gold_result)>10:
-                    continue
-
                 if db_id not in self.db_contents:
                     database_dict = read_sqlite_database(db_path)
                     self.db_contents['db_id'] = database_dict
                 else:
                     database_dict = self.db_contents['db_id']
 
+                try:
+                    gold_result = execute_query(db_path, query)
+                except Exception as e:
+                    print(f'error target query: {query} ; database: {db_id}')
+                    continue
+
                 n_tables = len(database_dict)
+                n_max_rows = max([len(database_dict[x]['rows']) for x in database_dict])
+                if n_max_rows>500:
+                    continue
+
                 print('loading table processor ...')
                 self.tab_processor = get_default_processor(max_cell_length=15,
                                                         tokenizer=self.tokenizer,
@@ -162,8 +168,10 @@ class TrainDataset(Dataset):
                     table_context = deepcopy(database_dict[tbl])
                     print('processing table ...')
                     print('  gold result: ', gold_result)
+                    print('  table: ', tbl, 'in', {x: len(database_dict[x]['rows']) for x in database_dict})
                     for truncate_func in self.tab_processor.table_truncate_funcs:
                         truncate_func.truncate_table(table_context, question, gold_result)
+                        # truncate_func.truncate_table(table_context, question, [])
                     table_contexts.append(table_context)
                     # linearize a table into a string
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
