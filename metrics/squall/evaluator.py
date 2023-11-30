@@ -47,9 +47,7 @@ def find_fuzzy_col(col, mapping):
 
 
 def fuzzy_replace(pred, table_id, mapping):
-    print('\n')
-    verbose = True
-
+    verbose = False
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
@@ -163,7 +161,7 @@ def fuzzy_replace(pred, table_id, mapping):
         print('String is replaced by fuzzy match!')
         print(table_path)
         print(f'From: {ori_pred}')
-        print(f'To  : {pred}')
+        print(f'To  : {pred}\n')
 
     return pred
 

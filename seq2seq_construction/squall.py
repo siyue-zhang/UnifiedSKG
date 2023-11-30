@@ -287,7 +287,8 @@ class TestDataset(Dataset):
 
                 question, _ = squall_pre_process_one_function(extend_data)
                 extend_data.update({"struct_in": extend_data["serialized_schema"].strip(),
-                                    "text_in": question})
+                                    "text_in": question,
+                                    "seq_out": ''})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)

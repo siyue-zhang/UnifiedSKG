@@ -141,6 +141,9 @@ class TrainDataset(Dataset):
                 query = raw_data["query"]
 
                 gold_result = execute_query(db_path, query)
+                if len(gold_result)>10:
+                    continue
+
                 if db_id not in self.db_contents:
                     database_dict = read_sqlite_database(db_path)
                     self.db_contents['db_id'] = database_dict
@@ -152,7 +155,6 @@ class TrainDataset(Dataset):
                 self.tab_processor = get_default_processor(max_cell_length=15,
                                                         tokenizer=self.tokenizer,
                                                         max_input_length=int(args.seq2seq.table_truncation_max_length/n_tables))
-                print('loaded')
                 table_contexts = []
                 struct_in = ''
                 for tbl in database_dict:
@@ -208,7 +210,9 @@ class DevDataset(Dataset):
                 query = raw_data["query"]
 
                 gold_result = execute_query(db_path, query)
-
+                if len(gold_result)>10:
+                    continue
+                
                 if db_id not in self.db_contents:
                     database_dict = read_sqlite_database(db_path)
                     self.db_contents['db_id'] = database_dict
