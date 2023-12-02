@@ -58,7 +58,7 @@ python train.py \
   --generation_num_beams 5 \
   --generation_max_length 128 \
   --input_max_length 1024 \
-  --max_train_samples 5000 \
+  --max_train_samples 10000 \
   --max_eval_samples 1000
 
   --ddp_find_unused_parameters true 
@@ -77,8 +77,8 @@ python train.py \
   --per_device_eval_batch_size 8 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
-  --input_max_length 1024  \
-  --max_train_samples 10 \
+  --input_max_length 1024 \
+  --max_train_samples 10000 \
   --max_eval_samples 1000
  
 

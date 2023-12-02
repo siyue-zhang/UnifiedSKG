@@ -241,7 +241,7 @@ class EvaluateTool(object):
         correct_flag = None
         total = len(golds)
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
-        fuzzy_query = [ex["result"]["sql"] for ex in predictions]
+        fuzzy_query = [ex["result"][0]["sql"] for ex in predictions]
         num_correct, correct_flag, _, predicted = self.evaluator.evaluate(predictions, with_correct_flag=True, with_target=True)
         
         # if section=='test':

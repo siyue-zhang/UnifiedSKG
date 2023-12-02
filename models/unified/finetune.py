@@ -15,7 +15,7 @@ class Model(PushToHubFriendlyModel):
         if args.model.knowledge_usage == 'tapex':
             self.tokenizer = TapexTokenizer.from_pretrained(args.bert.location, use_fast=True)
         else:
-            self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+            self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=True)
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert.location,
         )

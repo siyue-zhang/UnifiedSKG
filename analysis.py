@@ -32,16 +32,17 @@ def add_flag(df, path_flag):
 
 if __name__=='__main__':
     # file = '/scratch/sz4651/Projects/UnifiedSKG/output/Omnitab_large_finetune_squall_tableqa/predictions_predict.json'
-    file = '/scratch/sz4651/Projects/UnifiedSKG/output/Omnitab_large_finetune_squall_tableqa2/predictions_eval.json'
+    # file = '/scratch/sz4651/Projects/UnifiedSKG/output/Omnitab_large_finetune_squall_tableqa2/predictions_eval.json'
     # file = '/scratch/sz4651/Projects/UnifiedSKG/output/T5_large_finetune_squall/predictions_eval_12.850310008857395.json'
     # file = '/scratch/sz4651/Projects/UnifiedSKG/output/Omnitab_large_finetune_squall_tableqa2/predictions_eval_36.16976127320955.json'
+    file = '/scratch/sz4651/Projects/UnifiedSKG/output/T5_large_finetune_squall2/predictions_eval.json'
     flag_file = file[:-5]+'_flag.json'
 
     keys = ['id', 'question', 'prediction', 'label' ,'query', 'converted_query']
     df = json_to_df(keys, load_json(file))
     df = add_flag(df, flag_file)
     print(df.head())
-    # df.to_csv('./t5_squall_text2sql_dev.csv')
-    df.to_csv('./omnitab_squall_tableqa_dev.csv')
+    df.to_csv('./t5_squall_text2sql_dev.csv')
+    # df.to_csv('./omnitab_squall_tableqa_dev.csv')
 
 

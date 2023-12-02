@@ -256,8 +256,13 @@ class Squall(datasets.GeneratorBasedBuilder):
                 query = ' '.join(sqls['value'])
                 tgt = sample['tgt']
                 query_tokens = sqls['value']
-                
-            raw_header = cols['raw_header']
+
+            if sample["tbl"]=='204_56':
+                tmp = deepcopy(query)
+                query = query.replace('c1_year', 'c1_number')
+                print("column c1 in table 204_56 corrected!")
+
+            raw_header = [x.replace('\n', ' ').strip().lower() for x in cols['raw_header']]
             raw_header = ['unknown' if element == '' else element for element in raw_header]
             raw_header = [raw_header[i]+f'_{i+1}' for i in range(len(raw_header))]
             column_suffixes = cols['column_suffixes']
@@ -268,6 +273,7 @@ class Squall(datasets.GeneratorBasedBuilder):
             for j, h in enumerate(column_suffixes):
                 db_column_names['table_id'].append(0)
                 db_column_names['column_name'].append(raw_header[j])
+                    
                 db_column_names['ori_column_name'].append(f'c{j+1}')
 
                 col_type = cols["column_dtype"][j]
@@ -288,6 +294,8 @@ class Squall(datasets.GeneratorBasedBuilder):
             if split_key != 'test':
                 for k, ori_col in enumerate(db_column_names['ori_column_name']):
                     converted_query = converted_query.replace(ori_col, db_column_names['column_name'][k])
+
+
 
             yield idx, {
                 "query": query,

@@ -123,9 +123,6 @@ def main() -> None:
     model = utils.tool.get_model(args.model.name)(args)
     model_tokenizer = model.tokenizer
 
-    if not training_args.do_train and training_args.resume_from_checkpoint:        
-        model.load(training_args.resume_from_checkpoint)
-
     seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = None, None, None
     if len(seq2seq_dataset_split) == 2:
         seq2seq_train_dataset, seq2seq_eval_dataset = seq2seq_dataset_split
