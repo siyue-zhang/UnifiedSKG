@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     os.environ[
         'CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # Deterministic behavior of torch.addmm. Please refer to https://docs.nvidia.com/cuda/cublas/index.html#cublasApi_reproducibility
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     # torch.set_deterministic(True)
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)

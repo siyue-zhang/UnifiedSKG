@@ -49,7 +49,7 @@ def find_fuzzy_col(col, mapping):
 def fuzzy_replace(pred, table_id, mapping):
     mapping['id'] = 'id'
     mapping['agg'] = 'agg'
-    verbose = False
+    verbose = True
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
         contents = json.load(file)
@@ -59,7 +59,7 @@ def fuzzy_replace(pred, table_id, mapping):
     cols = []
     for c in contents:
         for cc in c:
-            cols.append(cc['col'])
+            cols.append(cc['col'].strip().replace(' ','_').lower())
 
     pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.*?".*?\'.*".*?)\'', pred)
     # select c5 from w where c2 = '"i'll be your fool tonight"'
@@ -150,6 +150,9 @@ def fuzzy_replace(pred, table_id, mapping):
             print(f' {col}-->{col_replace}')
             col = col_replace
 
+        if verbose:
+            print(f'C')
+ 
         for ori in [ori1, ori2]:
             best_match = find_best_match(contents, col, ori)
             to_replace = to_replace.replace(ori, best_match)
@@ -191,6 +194,9 @@ def fuzzy_replace(pred, table_id, mapping):
     for i in range(len(tokens)):
         pred = pred.replace(tokens[i], replacement[i])
 
+        if verbose:
+            print(f'D')
+
     for j in range(len(buf)):
         pred = pred.replace(f'[X{j}]', f'\'{buf[j]}\'')
     
@@ -218,11 +224,11 @@ def postprocess_text(preds, golds, section, fuzzy):
         for j, h in enumerate(column_name):
             pred=pred.replace(h, ori_column_name[j])
             label=label.replace(h, ori_column_name[j])
-            
+
         if fuzzy:
             mapping = {ori: col for ori, col in zip(ori_column_name, column_name)}
             pred = fuzzy_replace(pred, table_id, mapping)
-
+        print('nt: ', nt_id, 'fuzzy query: ', pred)
         result_dict = {"sql": pred, "id": nt_id, "tgt": label}
         res = {"table_id": table_id, "result": [result_dict], 'nl': nl}
         predictions.append(res)

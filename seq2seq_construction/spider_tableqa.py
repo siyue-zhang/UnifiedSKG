@@ -127,9 +127,9 @@ class TrainDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
-            # self.tab_processor = get_default_processor(max_cell_length=15,
-            #                                            tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
-            #                                            max_input_length=args.seq2seq.table_truncation_max_length)
+            self.tab_processor = get_default_processor(max_cell_length=15,
+                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       max_input_length=args.seq2seq.table_truncation_max_length)
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
                 extend_data = deepcopy(raw_data)
@@ -152,15 +152,13 @@ class TrainDataset(Dataset):
                     print(f'error target query: {query} ; database: {db_id}')
                     continue
 
-                n_tables = len(database_dict)
+                if isinstance(gold_result, list) and len(gold_result)>10:
+                    continue 
+
                 n_max_rows = max([len(database_dict[x]['rows']) for x in database_dict])
-                if n_max_rows>500:
+                if n_max_rows>60 or len(database_dict.keys())>10:
                     continue
 
-                print('loading table processor ...')
-                self.tab_processor = get_default_processor(max_cell_length=15,
-                                                        tokenizer=self.tokenizer,
-                                                        max_input_length=int(args.seq2seq.table_truncation_max_length/n_tables))
                 table_contexts = []
                 struct_in = ''
                 for tbl in database_dict:
@@ -171,7 +169,6 @@ class TrainDataset(Dataset):
                     print('  table: ', tbl, 'in', {x: len(database_dict[x]['rows']) for x in database_dict})
                     for truncate_func in self.tab_processor.table_truncate_funcs:
                         truncate_func.truncate_table(table_context, question, gold_result)
-                        # truncate_func.truncate_table(table_context, question, [])
                     table_contexts.append(table_context)
                     # linearize a table into a string
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
@@ -207,6 +204,9 @@ class DevDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
+            self.tab_processor = get_default_processor(max_cell_length=15,
+                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       max_input_length=args.seq2seq.table_truncation_max_length)
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
                 extend_data = deepcopy(raw_data)
@@ -216,10 +216,6 @@ class DevDataset(Dataset):
                 db_path = db_path + "/" + db_id + "/" + db_id + ".sqlite"
                 question = raw_data["question"]
                 query = raw_data["query"]
-
-                gold_result = execute_query(db_path, query)
-                if len(gold_result)>10:
-                    continue
                 
                 if db_id not in self.db_contents:
                     database_dict = read_sqlite_database(db_path)
@@ -227,10 +223,19 @@ class DevDataset(Dataset):
                 else:
                     database_dict = self.db_contents['db_id']
 
-                n_tables = len(database_dict)
-                self.tab_processor = get_default_processor(max_cell_length=15,
-                                                        tokenizer=self.tokenizer,
-                                                        max_input_length=int(args.seq2seq.table_truncation_max_length/n_tables))
+                try:
+                    gold_result = execute_query(db_path, query)
+                except Exception as e:
+                    print(f'error target query: {query} ; database: {db_id}')
+                    continue
+
+                if isinstance(gold_result, list) and len(gold_result)>10:
+                    continue 
+
+                n_max_rows = max([len(database_dict[x]['rows']) for x in database_dict])
+                if n_max_rows>60 or len(database_dict.keys())>10:
+                    continue
+
                 table_contexts = []
                 struct_in = ''
                 for tbl in database_dict:

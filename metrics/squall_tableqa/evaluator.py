@@ -446,6 +446,7 @@ class EvaluateTool(object):
         # section: dev
         summary = {}
         gold_inferreds = [item["seq_out"] for item in golds]
+
         # exec_match = []
         # ex_match = []
         correct_flag = []

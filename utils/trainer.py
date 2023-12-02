@@ -338,7 +338,11 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
     ) -> EvalPrediction:
         assert isinstance(examples, Dataset)
 
+        # print(predictions[0])
+        # print(self.tokenizer.convert_ids_to_tokens(predictions[0]))
         predictions = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
+        # print(predictions)
+        # assert 1==2
 
         # Save locally.
         if self.args.local_rank <= 0:
