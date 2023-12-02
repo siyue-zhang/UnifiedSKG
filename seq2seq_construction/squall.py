@@ -141,7 +141,7 @@ def serialize_schema(
 
     elif schema_serialization_type == 'tapex':
         serialized_schema = 'col: '
-        column_name = db_column_names['column_name'][1:]
+        column_name = ['id', 'agg'] + db_column_names['column_name'][1:]
         serialized_schema += ' | '.join(column_name)
 
         if schema_serialization_with_db_content:
@@ -160,7 +160,7 @@ def serialize_schema(
                                 cell_str = ', '.join([str(x) for x in cell])
                             else:
                                 cell_str = str(cell)
-                            cells.append(cell_str[:min(len(cell_str),64)])
+                            cells.append(cell_str[:min(len(cell_str),128)])
                         else:
                             cells.append('')
                 serialized_schema += ' | '.join(cells)

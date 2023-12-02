@@ -9,6 +9,7 @@ from transformers import (
     HfArgumentParser,
     set_seed,
     EarlyStoppingCallback,
+    AutoModelForSeq2SeqLM
 )
 from transformers.trainer_utils import get_last_checkpoint
 from collections import OrderedDict
@@ -48,7 +49,7 @@ def main() -> None:
             os.path.dirname(args.bert.location.model_name_or_path))
         logger.info(f"Resolve model_name_or_path to {args.bert.location.model_name_or_path}")
 
-    if training_args.max_train_samples:
+    if training_args.max_train_samples or training_args.do_train==False:
         training_args.report_to=[] 
 
     if "wandb" in training_args.report_to and training_args.local_rank <= 0:
@@ -67,8 +68,7 @@ def main() -> None:
 
     # Detect last checkpoint
     last_checkpoint = None
-    if os.path.isdir(
-            training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
@@ -122,6 +122,9 @@ def main() -> None:
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
     model = utils.tool.get_model(args.model.name)(args)
     model_tokenizer = model.tokenizer
+
+    if not training_args.do_train and training_args.resume_from_checkpoint:        
+        model.load(training_args.resume_from_checkpoint)
 
     seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = None, None, None
     if len(seq2seq_dataset_split) == 2:

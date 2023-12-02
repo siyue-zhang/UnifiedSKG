@@ -16,7 +16,7 @@ class EvaluateTool(object):
     def __init__(self, meta_args):
         self.meta_args = meta_args
 
-    def evaluate(self, preds, golds, section):
+    def evaluate(self, preds, golds, section, save_path):
         meta_args = self.meta_args
         summary = {}
         wait_for_eval = {}
@@ -30,15 +30,10 @@ class EvaluateTool(object):
         for arg_path, preds_golds in wait_for_eval.items():
             args = Configure.refresh_args_by_file_cfg(os.path.join(meta_args.dir.configure, arg_path), meta_args)
             evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
-            summary_tmp = evaluator.evaluate(preds_golds['preds'], preds_golds['golds'], section)
-            if isinstance(summary_tmp, tuple):
-                correct_flag=summary_tmp[1]
-                summary_tmp=summary_tmp[0]
-            else:
-                correct_flag = None
+            summary_tmp = evaluator.evaluate(preds_golds['preds'], preds_golds['golds'], section, save_path)
             for key, metric in summary_tmp.items():  # TODO
                 summary[os.path.join(arg_path, key)] = metric
             # summary[os.path.join(arg_path, args.train.stop)] = summary_tmp[args.train.stop]
         
         summary['avr'] = float(np.mean([float(v) for k, v in summary.items()]))
-        return summary, correct_flag
+        return summary

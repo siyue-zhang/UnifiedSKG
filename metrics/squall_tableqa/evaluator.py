@@ -48,6 +48,7 @@ from math import isnan, isinf
 from abc import ABCMeta, abstractmethod
 from metrics.unified.evaluator import eval_ex_match
 import numpy as np
+import json
 
 ################ String Normalization ################
 
@@ -439,7 +440,7 @@ class EvaluateTool(object):
                     self.target_values_map[ex_id] = to_value_list(
                         original_strings, canon_strings)
 
-    def evaluate(self, preds, golds, section):
+    def evaluate(self, preds, golds, section, save_path):
         # preds: list of string
         # golds: list of dict
         # section: dev
@@ -452,10 +453,14 @@ class EvaluateTool(object):
             # exec_match.append(eval_exec_match(pred, gold_result))
             # ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
             ex_id = golds[i]['id']
-            tag_match.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
+            correct_flag.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
 
         # summary["all_ex"] = float(np.mean(ex_match))
         # summary["exec_match"] = float(np.mean(exec_match))
-        summary["tag_match"] = float(np.mean(tag_match))
+        summary["tag_match"] = float(np.mean(correct_flag))
 
-        return summary, correct_flag
+        to_save = [{'correct': flg} for flg in correct_flag]
+        with open(save_path+'_flag.json', "w") as f:
+            json.dump(to_save, f, indent=4)
+
+        return summary

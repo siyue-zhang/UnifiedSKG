@@ -61,3 +61,7 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
             )
         },
     )
+    id: Optional[str] = field(
+        default=None, metadata={
+            "help": "Question ID."}
+    )

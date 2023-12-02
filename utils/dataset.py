@@ -44,7 +44,10 @@ class TokenizedDataset(Dataset):
                 ######################
                 if self.args.model.knowledge_usage == 'concatenate' or self.args.model.knowledge_usage is None:
                     # seq_in  = "text_in ; structured knowledge: struct_in"
-                    seq_in = "{} ; structured knowledge: {}".format(raw_item["text_in"], raw_item["struct_in"])
+                    if self.args.model.concat:
+                        seq_in = "{} tab: w {}".format(raw_item["text_in"], raw_item["struct_in"])
+                    else:
+                        seq_in = "{} ; structured knowledge: {}".format(raw_item["text_in"], raw_item["struct_in"])
                 elif self.args.model.knowledge_usage in ['separate', 'tapex']:
                     # seq_in  = "text_in"
                     seq_in = raw_item["text_in"]
@@ -102,6 +105,7 @@ class TokenizedDataset(Dataset):
                 max_length=self.training_args.generation_max_length,
                 # We set the max_length of "seq_out" during training is the same with the one in inference.
             )
+
         tokenized_inferred_input_ids = torch.LongTensor(tokenized_inferred.data["input_ids"])
         # Here -100 will let the model not to compute the loss of the padding tokens.
         tokenized_inferred_input_ids[tokenized_inferred_input_ids == self.tokenizer.pad_token_id] = -100

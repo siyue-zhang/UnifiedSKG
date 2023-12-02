@@ -38,7 +38,7 @@ def find_fuzzy_col(col, mapping):
         # assert c_num in mapping, f'{c_num} not in {mapping}'
         if c_num not in mapping:
             print(f'predicted {c_num} is not valid ({mapping})')
-            return mapping.keys()[0]
+            return list(mapping.keys())[0]
         else:
             best_match, _ = process.extractOne(col.replace(c_num, mapping[c_num]), [value for _, value in mapping.items()])
     else:
@@ -47,6 +47,8 @@ def find_fuzzy_col(col, mapping):
 
 
 def fuzzy_replace(pred, table_id, mapping):
+    mapping['id'] = 'id'
+    mapping['agg'] = 'agg'
     verbose = False
     table_path = f'./third_party/squall/tables/json/{table_id}.json'
     with open(table_path, 'r') as file:
@@ -163,7 +165,7 @@ def fuzzy_replace(pred, table_id, mapping):
     for idx, match in enumerate(pairs):
         start = match.start(0)
         end = match.end(0)
-        col = pred[match.start(1):match.start(1)]
+        col = pred[match.start(1):match.end(1)]
         ori1 = pred[match.start(2):match.end(2)]
         ori2 = pred[match.start(3):match.end(3)]
         ori3 = pred[match.start(4):match.end(4)]
@@ -235,10 +237,11 @@ class EvaluateTool(object):
         f"./third_party/squall/tables/db/",
 )
 
-    def evaluate(self, preds, golds, section):
+    def evaluate(self, preds, golds, section, save_path):
         correct_flag = None
         total = len(golds)
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
+        fuzzy_query = [ex["result"]["sql"] for ex in predictions]
         num_correct, correct_flag, _, predicted = self.evaluator.evaluate(predictions, with_correct_flag=True, with_target=True)
         
         # if section=='test':
@@ -251,5 +254,9 @@ class EvaluateTool(object):
         #     return {"logical_form": logical_form/total, 
         #             "execution_accuracy":num_correct/total}
         
-        return {"execution_accuracy":num_correct/total}, correct_flag
+        to_save = [{'correct': flg, 'queried': pred, 'fuzzy_query': fuzzy} for flg, pred, fuzzy in zip(correct_flag, predicted, fuzzy_query)]
+        with open(save_path+'_flag.json', "w") as f:
+            json.dump(to_save, f, indent=4)
+
+        return {"execution_accuracy":num_correct/total}
 
