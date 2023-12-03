@@ -61,7 +61,7 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
             )
         },
     )
-    id: Optional[str] = field(
-        default=None, metadata={
-            "help": "Question ID."}
+    disable_callback: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether or not to disable callback."},
     )

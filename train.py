@@ -139,7 +139,12 @@ def main() -> None:
                                     seq2seq_test_dataset) if seq2seq_test_dataset else None
 
     # Initialize our Trainer
-    early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
+    if training_args.disable_callback:
+        callbacks = []
+    else:
+        early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
+        callbacks = [early_stopping_callback]
+        
     trainer = EvaluateFriendlySeq2SeqTrainer(
         args=training_args,
         model=model,
@@ -151,7 +156,7 @@ def main() -> None:
         eval_dataset=eval_dataset,
         eval_examples=seq2seq_eval_dataset,
         wandb_run_dir=wandb.run.dir if "wandb" in training_args.report_to and training_args.local_rank <= 0 else None,
-        callbacks=[early_stopping_callback],
+        callbacks=callbacks,
     )
     print('Trainer build successfully.')
 
