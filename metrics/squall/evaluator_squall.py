@@ -435,7 +435,6 @@ class Evaluator:
             with open(table_file, "r") as f:
                 table_json = json.load(f)
 
-            print('++')
             connection = sqlite3.connect(db_file)
             c = connection.cursor()
 
@@ -453,9 +452,7 @@ class Evaluator:
                 except Exception as e:
                     num_fail += 1
                     predicted_values = list()
-                
-                print('--')
-
+   
                 if ex_id not in self.target_values_map:
                     print('WARNING: Example ID "%s" not found' % ex_id)
                     correct_flag.append(None)

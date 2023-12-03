@@ -1,34 +1,27 @@
 import re
 
-pred = "select count ( * ) from w where c5 in ( 'barrington', 'farmington', 'rochester' )"
-print(pred)
-x = re.findall(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
-print(x)
-pairs = re.finditer(r'where (c[0-9]{1,}.{,20}?) in \(\s*?\'(.{1,}?)\'\s*?,\s*?\'(.{1,}?)\'\s*?, \'(.{1,}?)\'\s*?\)', pred)
-tokens = []
-replacement = []
-for idx, match in enumerate(pairs):
-    start = match.start(0)
-    end = match.end(0)
-    col = pred[match.start(1):match.end(1)]
-    ori1 = pred[match.start(2):match.end(2)]
-    ori2 = pred[match.start(3):match.end(3)]
-    ori3 = pred[match.start(4):match.end(4)]
-    print(col, ori1, ori2, ori3)
-    to_replace = pred[start:end]
-    print(to_replace)
+# pred = "select ( select c5 from w where c2 = '\"die 'hard\"' ) - ( select c5 from w where c2 = '\"die hard\"' )"
+# # pred = "select c5 from w where c2 = '\"hor'semen\"'"
+# print(pred)
 
-    token = str(idx) + '_'*(end-start-len(str(idx)))
-    tokens.append(token)
-    pred = pred[:start] + token + pred[end:]
+# pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'([^"]*?"[^"]*?\'[^"]*".*?)\'', pred)
+# # select c5 from w where c2 = '"i'll be your fool tonight"'
+# buf = []
+# n = 0
+# if len(pairs)>0:
+#     for col, ori in pairs:
+#         pred = pred.replace(f'\'{ori}\'', f'[X{n}]')
+#         n += 1
 
+# print(pred)
 
-    for ori in [ori1, ori2, ori3]:
-        best_match = 'xx'
-        to_replace = to_replace.replace(ori, best_match)
-    replacement.append(to_replace)
-
-for i in range(len(tokens)):
-    pred = pred.replace(tokens[i], replacement[i])
-
+pred = "select c3 from w where c1 = 'american mcgee's crooked house'"
+indices = []
+for i, char in enumerate(pred):
+    if char == "'":
+        indices.append(i)
+print(indices)
+if len(indices) == 3:
+    pred = pred[:indices[0]] + "\"" + pred[indices[0]+1:]
+    pred = pred[:indices[2]] + "\"" + pred[indices[2]+1:]
 print(pred)

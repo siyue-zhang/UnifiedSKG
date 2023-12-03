@@ -56,12 +56,21 @@ def fuzzy_replace(pred, table_id, mapping):
     contents = contents["contents"]
     ori_pred = str(pred)
 
+    # select c3 from w where c1 = 'american mcgee's crooked house' 
+    indices = []
+    for i, char in enumerate(pred):
+        if char == "'":
+            indices.append(i)
+    if len(indices) == 3:
+        pred = pred[:indices[0]] + "\"" + pred[indices[0]+1:]
+        pred = pred[:indices[2]] + "\"" + pred[indices[2]+1:]
+
     cols = []
     for c in contents:
         for cc in c:
             cols.append(cc['col'].strip().replace(' ','_').lower())
 
-    pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'(.*?".*?\'.*".*?)\'', pred)
+    pairs = re.findall(r'where (c[0-9]{1,}.{,20}?)\s*?[!=><]{1,}\s*?\'([^"]*?"[^"]*?\'[^"]*".*?)\'', pred)
     # select c5 from w where c2 = '"i'll be your fool tonight"'
     buf = []
     n = 0
