@@ -81,6 +81,7 @@ class Squall(datasets.GeneratorBasedBuilder):
                             "table_id": datasets.Value("int32"),
                             "column_name": datasets.Value("string"),
                             'ori_column_name': datasets.Value("string"),
+                            'clean_column_name': datasets.Value("string"),
                         }
                     ),
                     "db_column_types": datasets.features.Sequence(datasets.Value("string")),
@@ -267,17 +268,19 @@ class Squall(datasets.GeneratorBasedBuilder):
 
 
             raw_header = [x.replace('\n', ' ').strip().replace(' ', '_').lower() for x in cols['raw_header']]
+            clean_header = [x.replace('\n', ' ').strip().lower() for x in cols['raw_header']]
             raw_header = ['unknown' if element == '' else element for element in raw_header]
             raw_header = [raw_header[i]+f'_{i+1}' for i in range(len(raw_header))]
             column_suffixes = cols['column_suffixes']
 
-            db_column_names = {'table_id':[-1], 'column_name': ['*'], 'ori_column_name': ['*']}
+            db_column_names = {'table_id':[-1], 'column_name': ['*'], 'ori_column_name': ['*'], 'clean_column_name': []}
             db_column_types = []
 
             for j, h in enumerate(column_suffixes):
                 db_column_names['table_id'].append(0)
                 db_column_names['column_name'].append(raw_header[j])
                 db_column_names['ori_column_name'].append(f'c{j+1}')
+                db_column_names['clean_column_name'].append(clean_header[j])
                 col_type = cols["column_dtype"][j]
                 if 'number' in col_type:
                         col_type = 'number'
@@ -286,6 +289,7 @@ class Squall(datasets.GeneratorBasedBuilder):
 
                 for suf in h:
                     db_column_names['column_name'].append(raw_header[j]+'_'+suf)
+                    db_column_names['clean_column_name'].append(clean_header[j]+'_'+suf)
                     db_column_names['ori_column_name'].append(f'c{j+1}_{suf}')
                     db_column_types.append(col_type)
             

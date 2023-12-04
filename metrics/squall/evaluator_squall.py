@@ -356,9 +356,10 @@ def check_quote_format(str):
             else:
                 single_start=False
                 continue
-        if i == len(str)-1 and (single_start==True or double_start==True):
-            return False
-    return True
+    if single_start==True or double_start==True:
+        return False
+    else:
+        return True
 
 
 
@@ -444,9 +445,10 @@ class Evaluator:
                 ex_id = result['id']
                 targets.append(self.target_values_map[ex_id])
                 sql = result['sql']
+                print('before checking sql: ', sql)
                 if not check_quote_format(sql):
                     sql = "select"
-     
+                print('before sending sql: ', sql)
                 try:
                     predicted_values, answer_list = make_query(sql, table_json, c, pred, replace=True)
                 except Exception as e:

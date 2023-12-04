@@ -197,6 +197,8 @@ def preprare_table_context(extend_data):
         while len(cols[c])<max_rows:
             cols[c].append('None')
     df = pd.DataFrame(cols)
+    df = df.drop(df.columns[:2], axis=1)
+    df.columns = extend_data['db_column_names']['clean_column_name']
     table_context = {'header': list(df.columns), 'rows': df.values.tolist()}
     assert len(table_context['header']) == len(table_context['rows'][0])
     return table_context

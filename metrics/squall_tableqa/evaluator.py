@@ -450,17 +450,21 @@ class EvaluateTool(object):
         # exec_match = []
         # ex_match = []
         correct_flag = []
+        seq_in = []
         for pred, gold_result, i in zip(preds, gold_inferreds, range(len(preds))):
             # exec_match.append(eval_exec_match(pred, gold_result))
             # ex_match.append(eval_ex_match(pred, gold_result, separator='|'))
             ex_id = golds[i]['id']
             correct_flag.append(eval_tag_match(pred, ex_id, self.target_values_map, separator='|'))
+            # print(golds[i])
+            # seq_in.append(golds[i]['seq_in'])
 
         # summary["all_ex"] = float(np.mean(ex_match))
         # summary["exec_match"] = float(np.mean(exec_match))
         summary["tag_match"] = float(np.mean(correct_flag))
 
-        to_save = [{'correct': flg} for flg in correct_flag]
+        # to_save = [{'correct': flg, 'seq_in': seq} for flg, seq in zip(correct_flag, seq_in)]
+        to_save = [{'correct': flg } for flg in correct_flag]
         with open(save_path+'_flag.json', "w") as f:
             json.dump(to_save, f, indent=4)
 

@@ -7,7 +7,7 @@
 # 			name=args.exp_name,
 # 			config=args)
 
-# srun --nodes=1 --tasks-per-node=1 --cpus-per-task=2 --mem=32GB --time=20:00:00 --gres=gpu:2 --pty /bin/bash
+# srun --nodes=1 --tasks-per-node=1 --cpus-per-task=4 --mem=32GB --time=20:00:00 --gres=gpu:4 --pty /bin/bash
 
 # singularity exec --nv --overlay /scratch/sz4651/Projects/overlay-share.ext3:rw /scratch/work/public/singularity/cuda11.1.1-cudnn8-devel-ubuntu20.04.sif /bin/bash
 
@@ -66,20 +66,20 @@ python train.py \
   --ddp_find_unused_parameters true 
   --adafactor true \
  
-
 python train.py \
   --seed 42 \
   --cfg Salesforce/_T5_large_finetune_squall.cfg \
-  --load_weights_from output/T5_large_finetune_squall2/checkpoint-1000 \
+  --load_weights_from output/save/T5_squall/checkpoint-500 \
   --do_eval \
   --do_predict \
   --predict_with_generate \
   --metric_for_best_model avr \
-  --output_dir output/T5_large_finetune_squall2 \
-  --per_device_eval_batch_size 8 \
+  --output_dir output/save/T5_squall/checkpoint-500 \
+  --per_device_eval_batch_size 4 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
-  --input_max_length 1024 \
+  --input_max_length 1024
+
   --max_train_samples 10000 \
   --max_eval_samples 2000
  
@@ -90,7 +90,7 @@ python ./train.py \
   --seed 42 \
   --cfg Salesforce/_Omnitab_large_finetune_squall_tableqa.cfg \
   --num_train_epochs 50 \
-  --run_name Omnitab_large_finetune_squall_tableqa_nail \
+  --run_name Omnitab_squall_tableqa \
   --logging_strategy steps \
   --logging_first_step true \
   --logging_steps 10 \
@@ -99,20 +99,19 @@ python ./train.py \
   --metric_for_best_model avr \
   --greater_is_better true \
   --save_strategy steps \
-  --warmup_steps 500 \
   --save_total_limit 1 \
   --load_best_model_at_end \
-  --gradient_accumulation_steps 16 \
+  --gradient_accumulation_steps 6 \
   --learning_rate 2e-5 \
-  --weight_decay 0.01 \
+  --warmup_ratio 0.1 \
   --do_train \
   --do_eval \
   --do_predict \
   --predict_with_generate \
-  --output_dir output/Omnitab_large_finetune_squall_tableqa \
+  --output_dir output/Omnitab_squall_tableqa \
   --overwrite_output_dir \
-  --per_device_train_batch_size 2 \
-  --per_device_eval_batch_size 8 \
+  --per_device_train_batch_size 4 \
+  --per_device_eval_batch_size 2 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
   --input_max_length 1024 \
@@ -132,7 +131,9 @@ python ./train.py \
   --per_device_eval_batch_size 8 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
-  --input_max_length 1024
+  --input_max_length 1024 \
+  --max_train_samples 10 \
+  --max_eval_samples 100 
 
 # WTQ TAPEX nail
 python ./train.py --seed 2 --cfg Salesforce/_Omnitab_large_finetune_wikitq.cfg --warmup_ratio 0.1 --num_train_epochs 50 --run_name Omnitab_large_finetune_wikitq --logging_strategy steps --logging_first_step true --logging_steps 10 --evaluation_strategy steps --eval_steps 100 --metric_for_best_model avr --greater_is_better true --save_strategy steps --save_steps 500 --save_total_limit 1 --load_best_model_at_end --gradient_accumulation_steps 24 --adafactor true --learning_rate 2e-5 --do_train --do_eval --do_predict --predict_with_generate --output_dir output/Omnitab_large_finetune_wikitq --overwrite_output_dir --per_device_train_batch_size 4 --per_device_eval_batch_size 8 --generation_num_beams 5 --generation_max_length 128 --input_max_length 1024 --ddp_find_unused_parameters true

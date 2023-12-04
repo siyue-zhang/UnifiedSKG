@@ -38,7 +38,7 @@ if __name__=='__main__':
     file = '/scratch/sz4651/Projects/UnifiedSKG/output/T5_large_finetune_squall2/predictions_eval.json'
     flag_file = file[:-5]+'_flag.json'
 
-    keys = ['id', 'question', 'prediction', 'label' ,'query', 'converted_query']
+    keys = ['id', 'question', 'prediction', 'label' ,'query', 'converted_query', 'seq_in']
     df = json_to_df(keys, load_json(file))
     df = add_flag(df, flag_file)
     print(df.head())

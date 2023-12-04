@@ -233,7 +233,7 @@ def postprocess_text(preds, golds, section, fuzzy):
         for j, h in enumerate(column_name):
             pred=pred.replace(h, ori_column_name[j])
             label=label.replace(h, ori_column_name[j])
-
+        print('pred before fuzzy: ', pred)
         if fuzzy:
             mapping = {ori: col for ori, col in zip(ori_column_name, column_name)}
             pred = fuzzy_replace(pred, table_id, mapping)
@@ -256,9 +256,11 @@ class EvaluateTool(object):
         correct_flag = None
         total = len(golds)
         predictions = postprocess_text(preds, golds, section, self.args.seq2seq.postproc_fuzzy_string)
+        print('after predictions')
         fuzzy_query = [ex["result"][0]["sql"] for ex in predictions]
+        print('before evaluate')
         num_correct, correct_flag, _, predicted = self.evaluator.evaluate(predictions, with_correct_flag=True, with_target=True)
-        
+        print('after evaluate')
         # if section=='test':
         #     return {"execution_accuracy":num_correct/total}
         # else:
@@ -268,8 +270,9 @@ class EvaluateTool(object):
         #             logical_form += 1
         #     return {"logical_form": logical_form/total, 
         #             "execution_accuracy":num_correct/total}
-        
+        print('before save')
         to_save = [{'correct': flg, 'queried': pred, 'fuzzy_query': fuzzy} for flg, pred, fuzzy in zip(correct_flag, predicted, fuzzy_query)]
+        print('save')
         with open(save_path+'_flag.json', "w") as f:
             json.dump(to_save, f, indent=4)
 

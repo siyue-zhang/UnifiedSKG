@@ -105,6 +105,8 @@ class TokenizedDataset(Dataset):
                 max_length=self.training_args.generation_max_length,
                 # We set the max_length of "seq_out" during training is the same with the one in inference.
             )
+        
+        # print('\n', self.tokenizer.batch_decode(tokenized_question_and_schemas["input_ids"]))
 
         tokenized_inferred_input_ids = torch.LongTensor(tokenized_inferred.data["input_ids"])
         # Here -100 will let the model not to compute the loss of the padding tokens.
