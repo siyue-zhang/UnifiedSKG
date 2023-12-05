@@ -69,13 +69,13 @@ python train.py \
 python train.py \
   --seed 42 \
   --cfg Salesforce/_T5_large_finetune_squall.cfg \
-  --load_weights_from output/save/T5_squall/checkpoint-500 \
+  --load_weights_from output/T5_large_finetune_squall/checkpoint-1900 \
   --do_eval \
   --do_predict \
   --predict_with_generate \
   --metric_for_best_model avr \
-  --output_dir output/save/T5_squall/checkpoint-500 \
-  --per_device_eval_batch_size 4 \
+  --output_dir output/save/T5_squall/checkpoint-1900 \
+  --per_device_eval_batch_size 8 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
   --input_max_length 1024
@@ -121,17 +121,17 @@ python ./train.py \
 python ./train.py \
   --seed 42 \
   --cfg Salesforce/_Omnitab_large_finetune_squall_tableqa.cfg \
-  --load_weights_from output/Omnitab_large_finetune_squall_tableqa2/checkpoint-4700 \
-  --run_name Omnitab_large_finetune_squall_tableqa2 \
+  --load_weights_from output/Omnitab_large_finetune_squall_tableqa/checkpoint-5800 \
   --do_eval \
   --do_predict \
   --metric_for_best_model avr \
   --predict_with_generate \
-  --output_dir output/Omnitab_large_finetune_squall_tableqa2 \
+  --output_dir output/save/Omnitab_squall_tableqa/checkpoint-5800 \
   --per_device_eval_batch_size 8 \
   --generation_num_beams 5 \
   --generation_max_length 128 \
-  --input_max_length 1024 \
+  --input_max_length 1024
+
   --max_train_samples 10 \
   --max_eval_samples 100 
 
